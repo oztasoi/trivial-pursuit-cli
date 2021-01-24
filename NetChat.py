@@ -48,23 +48,6 @@ def printAddressBook():
         print(f"{username} ({ip})")
     print(f"{Style.RESET_ALL}")    
 
-# def addToAddressBook(ip,name):
-#     exp = f"(?<!.){name}(_\d+)?(?!.)"
-#     r = re.compile(exp)
-#     targetNames = [u for u in addressBook.values() if r.match(u)]
-#     targetIps = [i for i, u in addressBook.items() if r.match(u)]
-
-#     nameCount = len(targetNames)
-#     if nameCount>0:
-#         if ip not in targetIps:
-#             name = f"{name}_{nameCount+1}"
-#             addressBook[ip]= name
-#             print(f"{Fore.GREEN}Added ({ip}) {name} to the address book{Style.RESET_ALL}")    
-#     else:
-#         addressBook[ip]= name
-#         print(f"{Fore.GREEN}Added ({ip}) {name} to the address book{Style.RESET_ALL}")    
-
-
 def searchForIp(string):
     regexp ='(?<=inet )192.\d+.\d+.\d+'
     return re.findall(regexp,string)
@@ -116,10 +99,12 @@ def sendExitSignal():
         # s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
         s.sendto(EXIT_SIGNAL,(myIp,PORT))
 
+        
+
 def send(targetIP,name="",ip="",packetType="",payload="",logError = False):
     #(TODO) type = bytes
     response = str.encode(createJsonString(name=name,ip=ip, packetType=packetType, payload=payload))
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:  
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:  
         # print(f"Sending {response} to {targetIP}")
         s.setblocking(1)
         s.settimeout(0.5)
@@ -136,39 +121,6 @@ def send(targetIP,name="",ip="",packetType="",payload="",logError = False):
         s.sendall(response) 
     if logError == True:        
         print(f"{Fore.GREEN}Message to ({targetIP}) {addressBook[targetIP]}:{Style.RESET_ALL} {payload}")    
-
-# (TODO) "while True:"nun nerede olduğunu değiştir ve dene neler olduğunu
-def tcpListener():
-    while(myName== "" or myIp==""):
-        pass
-    
-    while(not exitSignal):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind((myIp, PORT))
-            s.listen()
-            while not exitSignal:
-                # print("Waiting for TCP")
-                allMsg = str.encode("")
-                conn = s.accept()[0]
-                with conn:
-                    while True:
-                        msg = conn.recv(SIZE)
-                        allMsg = allMsg+msg
-                        if not msg:
-                            if allMsg == EXIT_SIGNAL:
-                                # print( "Exit signal received tcp")
-                                return
-                            data = allMsg.decode("utf-8").strip().split('\n')
-
-                            # print("Data received tcp: ",data)
-                            for datum in data:
-                                try:
-                                    message = json.loads(datum)
-                                except:
-                                    # print(f"{Fore.RED}Wrong JSON format received:{Style.RESET_ALL} {datum} bu kadar ")
-                                    continue
-                                consumeTcp(message)
-                            break
 
 def udpListener():
     while(myName== "" or myIp==""):
@@ -198,24 +150,6 @@ def udpListener():
                             continue
                         consumeUdp(message)
                     break
-
-def consumeTcp(message):
-    if typeField in message:
-        if message[typeField] == respondType :
-            # addToAddressBook(message[ipField],message[nameField])
-            senderIp = message[ipField]
-            if senderIp != myIp:
-                addressBook[senderIp] = message[nameField]
-                print(f"{Fore.GREEN}Added ({message[ipField]}) {message[nameField]} to the address book{Style.RESET_ALL}")    
-        elif message[typeField] == messageType:
-            print(f"{Fore.GREEN}Message from ({message[ipField]}) {message[nameField]}:{Style.RESET_ALL} {message[payloadField]}") 
-        elif message[typeField] == discoverType or message[typeField] == goodbyeType :
-            print(f"{Fore.RED}Discover/Goodbye TCP received\n{Style.RESET_ALL}")
-        else: 
-            print(f"{Fore.RED}Unknown message type\n{Style.RESET_ALL}")
-    else:
-        print(f"{Fore.RED}No type field in message (TCP)\n{Style.RESET_ALL}")
-
 
 def consumeUdp(message):
     if typeField in message:
