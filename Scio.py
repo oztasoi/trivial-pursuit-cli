@@ -19,15 +19,24 @@ from colorama import Fore, Style
 # discover() -> reset the dictionary and discover again?
 #               new discoveries in different color?
 
+'''
+Every username must be unique
+If username is not unique, the user will be prompted to change its username
+Every game will have a random number (like Kahoot) and users will join the game using the number
+If a user drops out of the game, he/she will be able to rejoin using that number
+'''
+
 PORT = 12345
 SIZE = 1024
 
 EXIT_SIGNAL = str.encode("EXIT_SIG")
 
-nameField = "NAME"
+nameField = "NAME" #can be received from respond's payload
 ipField = "MY_IP"
 typeField = "TYPE"
 payloadField = "PAYLOAD"
+startPeriodField = "START_TIME"
+endPeriodField = "END_TIME"
 
 discoverType = "DISCOVER"
 goodbyeType = "GOODBYE"
@@ -41,6 +50,7 @@ addressBook = {}
 exitSignal = False
 myIp = ""
 myName = ""
+
 
 def printAddressBook():
     print(f"{Fore.CYAN}Address book:")
@@ -60,6 +70,7 @@ def searchForHamachiIp(string):
 def findIpList():
     global myIp
     ifconfig = subprocess.run("ifconfig",stdout=subprocess.PIPE,text=True,stderr=subprocess.PIPE )
+    
     l1 = searchForIp(ifconfig.stdout)
     l2 = searchForHamachiIp(ifconfig.stdout)
     finalList = l1 + l2
@@ -79,9 +90,8 @@ def findIpList():
     else:
         print(f"{Fore.MAGENTA}Your IP address is", myIp, f"{Style.RESET_ALL}")
 
-def createJsonString(name="",ip="",packetType="",payload=""):
+def createJsonString(ip="",packetType="",payload=""):
     return json.dumps({ 
-        nameField: name,
         ipField: ip,
         typeField: packetType,
         payloadField: payload,
@@ -99,26 +109,15 @@ def sendExitSignal():
         # s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
         s.sendto(EXIT_SIGNAL,(myIp,PORT))
 
-        
-
-def send(targetIP,name="",ip="",packetType="",payload="",logError = False):
+def send(targetIP,ip="",packetType="",payload="",logError = False):
     #(TODO) type = bytes
-    response = str.encode(createJsonString(name=name,ip=ip, packetType=packetType, payload=payload))
+    response = str.encode(createJsonString(ip=ip, packetType=packetType, payload=payload))
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:  
         # print(f"Sending {response} to {targetIP}")
-        s.setblocking(1)
-        s.settimeout(0.5)
 
-        # maybe you can try to re-send if sending times out
-        try:
-            s.connect((targetIP, PORT))
-        except:
-            if logError == True:
-                print(f"{Fore.RED}Could not connect to IP (unexpected offline client detected){Style.RESET_ALL}")
-            return
+        for i in range(3):
+            s.sendto(response,(targetIP,PORT))
 
-        # print(f"{Fore.GREEN}Connected to IP {targetIP}{Style.RESET_ALL}")
-        s.sendall(response) 
     if logError == True:        
         print(f"{Fore.GREEN}Message to ({targetIP}) {addressBook[targetIP]}:{Style.RESET_ALL} {payload}")    
 
@@ -157,13 +156,15 @@ def consumeUdp(message):
             # addToAddressBook(message[ipField],message[nameField])
             senderIp = message[ipField]
             if senderIp != myIp:
-                addressBook[senderIp] = message[nameField]
-                print(f"{Fore.GREEN}Added ({message[ipField]}) {message[nameField]} to the address book{Style.RESET_ALL}")    
-                send(targetIP=senderIp,name=myName,ip=myIp, packetType=respondType)
+                addressBook[senderIp] = message[payloadField]
+                print(f"{Fore.GREEN}Added ({message[ipField]}) {message[payload]} to the address book{Style.RESET_ALL}")    
+                send(targetIP=senderIp,ip=myIp, packetType=respondType)
         elif message[typeField] == goodbyeType:
             senderIp = message[ipField]
             addressBook.pop(senderIp,None)
-        elif message[typeField] == messageType or message[typeField] == respondType:
+        elif message[typeField] == messageType:
+            print(f"{Fore.RED}Message/Respond UDP received\n{Style.RESET_ALL}")
+        elif message[typeField] == respondType:
             print(f"{Fore.RED}Message/Respond UDP received\n{Style.RESET_ALL}")
         else: 
             print(f"{Fore.RED}Unknown message type\n{Style.RESET_ALL}")
@@ -179,7 +180,7 @@ def sendBroadcast(broadcastType,count=1):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind(('',0))
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
-            msg = str.encode(createJsonString(name=myName,ip=myIp, packetType=broadcastType, payload=""))
+            msg = str.encode(createJsonString(ip=myIp, packetType=broadcastType, payload=""))
 
             # s.sendto(msg,('25.255.255.255',PORT))
             broadcastIp = myIp.rsplit(".",1)[0]+".255"
@@ -190,7 +191,7 @@ def sendBroadcast(broadcastType,count=1):
 def initializeClient():
     global myName
     subprocess.run(["clear"])
-    print(f"{Fore.MAGENTA}Welcome to NetChat!{Style.RESET_ALL}")    
+    print(f"{Fore.MAGENTA}Welcome to Scio!{Style.RESET_ALL}")    
 
     myName = input(f"{Fore.MAGENTA}Enter your username:\n{Style.RESET_ALL}")
     while (myName == ""):
@@ -200,6 +201,14 @@ def initializeClient():
     print(f"{Fore.MAGENTA}Hello {myName}! {Style.RESET_ALL}")    
 
     findIpList()
+
+    '''
+    Here, the host will configure the quiz
+    list the categories using the api
+    user chooses category index
+    user chooses number of questions
+    user chooses difficulty
+    '''
 
     print(f"{Fore.CYAN}Please wait until the client is initialized{Style.RESET_ALL}")   
     print(f"{Fore.CYAN}After the client is initialized, you will be able to type the following commands:{Style.RESET_ALL}")    
@@ -252,8 +261,6 @@ def exitChat():
     sendBroadcast(goodbyeType,3)
 
 def main():
-    tcpListenerThread = Thread(target=tcpListener)
-    tcpListenerThread.start()
     udpListenerThread = Thread(target=udpListener)
     udpListenerThread.start()
     initializeClient()
