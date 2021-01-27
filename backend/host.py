@@ -12,6 +12,7 @@ from random import randint
 from bidict import bidict
 from collections import defaultdict 
 from utils import *
+from createQuiz import *
 
 
 '''
@@ -109,17 +110,31 @@ def consumeUdp(message):
     else:
         print(f"{Fore.RED}No type field in message (UDP)\n{Style.RESET_ALL}")
 
-def initializeHost():
-    global gameCode
-    subprocess.run(["clear"])
-    print(f"{Fore.MAGENTA}Welcome to Scio!{Style.RESET_ALL}")    
+def chooseCategory():
+    print(f"{Fore.MAGENTA}Please choose and enter a category id from the following list:{Style.RESET_ALL}")    
 
-    print(f"{Fore.MAGENTA}Hello host! {Style.RESET_ALL}")  
+    idList = listCategories()
 
-    global myIp
-    myIp = findIpList()
+    chosenCategory = int(input(f"{Fore.MAGENTA}Please enter an id: {Style.RESET_ALL}"))
+    while chosenCategory not in idList:
+        print(chosenCategory)
+        chosenCategory = int(input(f"{Fore.MAGENTA}Chosen id is not valid, please enter a valid id: {Style.RESET_ALL}"))
+    return chosenCategory
 
+def chooseDifficulty():
+    print(f"{Fore.MAGENTA}Please choose and enter a difficulty number from the following list:{Style.RESET_ALL}")
 
+    listDifficulties()
+
+    chosenDifficulty = int(input(f"{Fore.MAGENTA}Please enter a difficulty number: {Style.RESET_ALL}"))
+    while chosenDifficulty not in difficulties:
+        chosenDifficulty = int(input(f"{Fore.MAGENTA}Chosen number is not valid, please enter a valid difficulty number: {Style.RESET_ALL}"))
+    return chosenDifficulty
+
+def chooseNumOfQuestions(categoryId,difficultyNum):
+    listAvailableAmount(categoryId,difficultyNum)
+
+def configureGame():
     '''
     Here, the host will configure the quiz
     list the categories using the api
@@ -127,7 +142,28 @@ def initializeHost():
     user chooses number of questions
     user chooses difficulty
     '''
+    categoryId = chooseCategory()
+    difficultyNum = chooseDifficulty()
+    chooseNumOfQuestions(categoryId,difficultyNum)
 
+
+
+
+
+
+
+
+def initializeHost():
+    global gameCode
+    subprocess.run(["clear"])
+    print(f"{Fore.MAGENTA}Welcome to Scio!")    
+
+    print(f"Hello host! {Style.RESET_ALL}")  
+
+    global myIp
+    myIp = findIpList()
+
+    configureGame()
     
     gameCode = randint(100000, 999999)
     print(f"{Fore.MAGENTA}Join the game using the game code: {Style.RESET_ALL} {gameCode} ")  
