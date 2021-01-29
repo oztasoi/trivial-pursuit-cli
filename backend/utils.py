@@ -8,10 +8,15 @@ import sys
 import socket
 import multiprocessing
 import time
+import host
 from colorama import Fore, Style
 from random import randint
 from bidict import bidict
 from collections import defaultdict 
+
+PRE_QUERY_DURATION = 2
+QUESTION_DURATION = 10
+POST_QUERY_DURATION = 1.5
 
 PORT = 12345
 SIZE = 1024
@@ -25,11 +30,18 @@ typeField = "TYPE"
 payloadField = "PAYLOAD"
 startPeriodField = "START_TIME"
 endPeriodField = "END_TIME"
+questionNumField = "QUESTION_NUM"
 
-discoverType = "DISCOVER"
+discoverType = "DISCOVER"       #sent by client
+topicType = "TOPIC"             #sent by client
+answerType = "ANSWER"           #sent by client
+
+respondType = "RESPOND"         #sent by host
+preTopicType = "PRE_TOPIC"      #sent by host
+preQueryType = "PRE_QUERY"      #sent by host
+queryResultType= "QUERY_RESULT" #sent by host
+
 goodbyeType = "GOODBYE"
-respondType = "RESPOND"
-messageType = "MESSAGE"
 
 # testing w hamachi
 # hamachiIpList = ["25.47.190.102","25.47.190.104", "25.43.1.132", ""]
@@ -67,16 +79,32 @@ def findIpList():
         print(f"{Fore.MAGENTA}Your IP address is", ip, f"{Style.RESET_ALL}")
     return ip
 
-def createJsonString(ip="",packetType="",payload=""):
-    return json.dumps({ 
+def createJsonString(ip="",packetType="",payload="",questionNum=0):
+    packet = { 
         ipField: ip,
         typeField: packetType,
         payloadField: payload,
-    }) + "\n"
+    }
+    if packetType == preQueryType:
+        start = time.time() + PRE_QUERY_DURATION
+        host.currentQuestion[host.currStartTime] = start
+        packet[startPeriodField] = start
 
-def send(targetIP,ip="",packetType="",payload="",logError = False):
+        end = start + QUESTION_DURATION
+        host.currentQuestion[host.currEndTime] = end
+        packet[endPeriodField] = end
+
+        packet[questionNumField] = questionNum
+    elif packetType == answerType:
+        packet[startPeriodField] = time.time() 
+        packet[questionNumField] = questionNum
+
+
+    return json.dumps(packet)
+
+def send(targetIP,ip="",packetType="",payload="",questionNum=0,logError = False):
     #(TODO) type = bytes
-    packet = str.encode(createJsonString(ip=ip, packetType=packetType, payload=payload))
+    packet = str.encode(createJsonString(ip=ip, packetType=packetType, payload=payload, questionNum=questionNum))
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:  
         # print(f"Sending {packet} to {targetIP}")
 
@@ -93,15 +121,16 @@ def sendSignal(signal,ip):
         # s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
         s.sendto(signal,(ip,PORT))   
 
-def sendBroadcast(senderIp,broadcastType,count=1,payload=""):
+def sendBroadcast(senderIp,broadcastType,count=1,payload="",questionNum=0):
     print(f"{Fore.MAGENTA}Sending {broadcastType}{Style.RESET_ALL}")
 
     for _ in range(count):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind(('',0))
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
-            msg = str.encode(createJsonString(ip=senderIp, packetType=broadcastType, payload=payload))
+            msg = str.encode(createJsonString(ip=senderIp, packetType=broadcastType, questionNum=questionNum,payload=payload))
 
+            print("BROADCAST MSG: ",msg)
             # s.sendto(msg,('25.255.255.255',PORT))
             broadcastIp = senderIp.rsplit(".",1)[0]+".255"
             # s.sendto(msg,('<broadcast>',PORT)) #(TODO) değiştir

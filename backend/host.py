@@ -7,13 +7,14 @@ import select
 import sys
 import socket
 import multiprocessing
+import html
+import time
 from colorama import Fore, Style
 from random import randint
 from bidict import bidict
 from collections import defaultdict 
 from utils import *
-from createQuiz import *
-
+import createQuiz 
 
 '''
 Every username must be unique
@@ -21,13 +22,28 @@ If username is not unique, the user will be prompted to change its username
 Every game will have a random number (like Kahoot) and users will join the game using the number
 If a user drops out of the game, he/she will be able to rejoin using that number
 '''
+currQuestionNum = "question number"
+currStartTime = "start time"
+currEndTime = "end time"
+currCorrectChoice = "correct choice"
+currAnswers = "answers"
+
+currentQuestion = {
+    currQuestionNum : -1,
+    currStartTime: -1,
+    currEndTime: -1,
+    currCorrectChoice: -1
+    currAnswers : {}
+}
 
 players = bidict()
 scoreboard = defaultdict(lambda: 0)
-exitSignal = False
-startSignal = False
+
 myIp = "" 
 gameCode = 0
+
+exitSignal = False
+startSignal = False
 
 def printAddressBook():
     print(f"{Fore.CYAN}Address book:")
@@ -101,38 +117,16 @@ def consumeUdp(message):
                 send(targetIP=senderIp,ip=myIp, packetType=respondType,payload=gameCode)
         elif message[typeField] == goodbyeType:
             #TODO what should we do if goodbye packet is received
-            senderIp = message[ipField]
-            players.pop(senderIp,None)
-        elif message[typeField] == messageType:
-            print(f"{Fore.RED}Message/Respond UDP received\n{Style.RESET_ALL}")
+            players.pop(message[ipField],None)
+        elif message[typeField] == answerType:
+            print(f"{Fore.RED}Answer received\n{Style.RESET_ALL}")
+            if message[questionNumField]==currentQuestion[currQuestionNum] and message[startPeriodField] <= currentQuestion[currEndTime] and message[startPeriodField] > currentQuestion[currStartTime]:
+                currentQuestion[currAnswers][message[ipField]] = message[startPeriodField]
+
         else: 
             print(f"{Fore.RED}Unknown message type\n{Style.RESET_ALL}")
     else:
         print(f"{Fore.RED}No type field in message (UDP)\n{Style.RESET_ALL}")
-
-def chooseCategory():
-    print(f"{Fore.MAGENTA}Please choose and enter a category id from the following list:{Style.RESET_ALL}")    
-
-    idList = listCategories()
-
-    chosenCategory = int(input(f"{Fore.MAGENTA}Please enter an id: {Style.RESET_ALL}"))
-    while chosenCategory not in idList:
-        print(chosenCategory)
-        chosenCategory = int(input(f"{Fore.MAGENTA}Chosen id is not valid, please enter a valid id: {Style.RESET_ALL}"))
-    return chosenCategory
-
-def chooseDifficulty():
-    print(f"{Fore.MAGENTA}Please choose and enter a difficulty number from the following list:{Style.RESET_ALL}")
-
-    listDifficulties()
-
-    chosenDifficulty = int(input(f"{Fore.MAGENTA}Please enter a difficulty number: {Style.RESET_ALL}"))
-    while chosenDifficulty not in difficulties:
-        chosenDifficulty = int(input(f"{Fore.MAGENTA}Chosen number is not valid, please enter a valid difficulty number: {Style.RESET_ALL}"))
-    return chosenDifficulty
-
-def chooseNumOfQuestions(categoryId,difficultyNum):
-    listAvailableAmount(categoryId,difficultyNum)
 
 def configureGame():
     '''
@@ -142,16 +136,11 @@ def configureGame():
     user chooses number of questions
     user chooses difficulty
     '''
-    categoryId = chooseCategory()
-    difficultyNum = chooseDifficulty()
-    chooseNumOfQuestions(categoryId,difficultyNum)
+    categoryId = createQuiz.chooseCategory()
+    difficultyNum = createQuiz.chooseDifficulty()
+    numOfQ = createQuiz.chooseNumOfQuestions(categoryId,difficultyNum)
 
-
-
-
-
-
-
+    createQuiz.getQuestions(categoryId,difficultyNum,numOfQ)
 
 def initializeHost():
     global gameCode
@@ -176,7 +165,6 @@ def initializeHost():
         cmd = input(f"{Fore.MAGENTA}Type \"start\" when players are ready {Style.RESET_ALL}")  
     startGame()
 
-
 def sendMessage(targetUsername, message):
     targetIp =""
     if targetUsername not in players.values():
@@ -194,21 +182,46 @@ def sendMessage(targetUsername, message):
     # message = input(f"{Fore.CYAN}Message \n{Style.RESET_ALL}")
     send(targetIp,name=myName,ip=myIp,packetType=messageType,payload=message,logError=True)
 
-def sender():
-    global exitSignal
-    while(not exitSignal):
-        #here we will iterate through questions
-        command = input(f"{Fore.CYAN}Enter a command or message\n{Style.RESET_ALL}")
-        if command == "addressBook()":
-            printAddressBook()
-        elif command == "exit()":
-            exitSignal = True
-        # elif command == "message()":
-        #     sendMessage()
-        elif "; " in command:
-            sendMessage(command.split("; ",1)[0],command.split("; ",1)[1])
-        else:
-            print(f"{Fore.RED}You did not enter a valid command \n{Style.RESET_ALL}")
+def play():
+    subprocess.run(["clear"]) 
+    print(f"{Fore.CYAN}Starting the game{Style.RESET_ALL}")
+    for i,question in enumerate(createQuiz.questions,1):
+        currentQuestion[currQuestionNum]=i
+        currentQuestion[currAnswers]={}
+        if exitSignal: #TODO this is meaningless, solve this issue!
+            return
+        
+        print(f"{Fore.CYAN}Get ready for question {i}...{Style.RESET_ALL}")
+        #broadcast PRE_QUERY packet
+        sendBroadcast(myIp,preQueryType,3,questionNum=i)
+        #PRE_QUERY period
+        time.sleep(PRE_QUERY_DURATION)
+        subprocess.run(["clear"])
+        print(time.time())
+
+        #QUESTION period
+        print(f"{Fore.CYAN}Question {i}\n{html.unescape(question['question'])}")
+        choices = question['incorrect_answers']
+        correctChoice = randint(0,3)
+        currentQuestion[currCorrectChoice]=correctChoice
+        choices.insert(correctChoice,question['correct_answer'])
+        for j,choice in enumerate(choices):
+            print(f"{Fore.YELLOW}{j} {Fore.CYAN}{html.unescape(choice)}{Style.RESET_ALL}")
+
+        time.sleep(QUESTION_DURATION)
+        subprocess.run(["clear"])
+        print(time.time())
+
+        print(f"{Fore.CYAN}Time's up...{Style.RESET_ALL}")
+        #broadcast POST_QUERY packet
+        time.sleep(POST_QUERY_DURATION)
+        subprocess.run(["clear"])
+        print(time.time())
+
+
+
+        
+
 
 def startGame():
     global startSignal
@@ -227,9 +240,10 @@ def main():
     udpListenerThread = Thread(target=udpListener)
     udpListenerThread.start()
 
-    senderThread = Thread(target=sender)
-    senderThread.start()
-    senderThread.join()
+    # playThread = Thread(target=play)
+    # playThread.start()
+    # playThread.join()
+    play()
     exitGame()
 
     udpListenerThread.join()

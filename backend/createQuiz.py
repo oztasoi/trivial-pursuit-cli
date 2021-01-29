@@ -1,7 +1,9 @@
-from urllib.parse import unquote
 import json
+import urllib
+import urllib.parse
 import urllib.request
 import html
+import random
 from colorama import Fore, Style
 
 '''
@@ -9,6 +11,7 @@ Create questions using Trivia API ("https://opentdb.com/api_config.php")
 '''
 
 categoryList = []
+questions = []
 
 difficulties = {
     1: "mixed",
@@ -17,18 +20,31 @@ difficulties = {
     4: "hard"
 }    
 
-def getQuestions():
-    defaultEncoded = "https://opentdb.com/api.php?amount=10"
-
-    # createURL(,amount)
-
-    response = urllib.request.urlopen(defaultEncoded)
+def createUrl(categoryId,difficultyNum,numOfQ):
+    url = "https://opentdb.com/api.php?"
+    post_params = {
+        'type' : 'multiple',
+        'amount' : str(numOfQ),
+        'category': str(categoryId)
+    }
+    if difficultyNum != 1:
+        post_params['difficulty']=difficulties[difficultyNum]
+    post_args = urllib.parse.urlencode(post_params)
+    
+    response = urllib.request.urlopen(url+post_args) #couldn't pass the parameters as 'data' here
     encoding = response.info().get_content_charset('utf-8')
-    data = json.loads(response.read().decode(encoding))
+    return json.loads(response.read().decode(encoding))
 
-    print(data)
-    print(data["results"][-1]['question'])
-    print(html.unescape(data["results"][-1]['question']))
+def getQuestions(categoryId,difficultyNum,numOfQ):
+    global questions
+    data = createUrl(categoryId,difficultyNum,numOfQ)
+
+    if data["response_code"]!=0:
+        raise ValueError(f"{Fore.RED}API call returned a response code of {data['response_code']}{Style.RESET_ALL}")
+
+    questions=data["results"]
+    print(f"{Fore.MAGENTA}Successfully retrieved the questions{Style.RESET_ALL}")
+    # print(questions)
 
 def listCategories():
     global categoryList
@@ -57,8 +73,40 @@ def listAvailableAmount(categoryId, difficulty):
     if difficulty != 1:
         key = "total_"+difficulties[difficulty]+"_question_count"
 
-    print(f"{Fore.MAGENTA}Number of questions available is {countList[key]}{Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}Number of questions available: {Fore.MAGENTA}{countList[key]}{Style.RESET_ALL}")
     return countList[key]
+
+def chooseCategory():
+    print(f"{Fore.MAGENTA}Please choose and enter a category id from the following list:{Style.RESET_ALL}")    
+
+    idList = listCategories()
+
+    chosenCategory = int(input(f"{Fore.MAGENTA}Please enter an id: {Style.RESET_ALL}"))
+    while chosenCategory not in idList:
+        print(chosenCategory)
+        chosenCategory = int(input(f"{Fore.MAGENTA}Chosen id is not valid, please enter a valid id: {Style.RESET_ALL}"))
+    return chosenCategory
+
+def chooseDifficulty():
+    print(f"{Fore.MAGENTA}Please choose and enter a difficulty number from the following list:{Style.RESET_ALL}")
+
+    listDifficulties()
+
+    chosenDifficulty = int(input(f"{Fore.MAGENTA}Please enter a difficulty number: {Style.RESET_ALL}"))
+    while chosenDifficulty not in difficulties:
+        chosenDifficulty = int(input(f"{Fore.MAGENTA}Chosen number is not valid, please enter a valid difficulty number: {Style.RESET_ALL}"))
+    return chosenDifficulty
+
+def chooseNumOfQuestions(categoryId,difficultyNum):
+    maxNum =listAvailableAmount(categoryId,difficultyNum)
+
+    chosenNum = int(input(f"{Fore.MAGENTA}Please enter how many questions you want to be asked: {Style.RESET_ALL}"))
+    while chosenNum not in range(1,maxNum):
+        chosenNum = int(input(f"{Fore.MAGENTA}Chosen number is not valid, please enter how many questions you want to be asked: {Style.RESET_ALL}"))
+    return chosenNum
 
 def printCategoryList():
     pass
+
+
+# getQuestions(22,2,10)
