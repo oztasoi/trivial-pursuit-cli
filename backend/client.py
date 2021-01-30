@@ -62,7 +62,7 @@ def udpListener():
                         consumeUdp(message)
                     break
 
-def consumeUdp(message):
+def consumeUdp(message): #TODO this should be modified according to PRE_QUERY and POST_QUERY packets
     print(message)
     global hostIp
     if typeField in message:
@@ -70,8 +70,8 @@ def consumeUdp(message):
             senderIp = message[ipField]
             if senderIp==hostIp:
                 sendSignal(EXIT_SIGNAL,myIp)
-        elif message[typeField] == messageType:
-            print(f"{Fore.RED}Message/Respond UDP received\n{Style.RESET_ALL}")
+        elif message[typeField] == answerType:
+            print(f"{Fore.RED}ANSWER received, somethings wrong\n{Style.RESET_ALL}")
         elif message[typeField] == respondType: #valid in client
             #TODO check this logic
             global respondReceived
@@ -97,22 +97,14 @@ def initializeClient():
     global myIp
     myIp = findIpList()
     
-def sendMessage(targetUsername, message):
-    targetIp =""
-    if targetUsername not in players.values():
-        print(f"{Fore.RED}Username not in address book{Style.RESET_ALL}")
-        return
-    elif sum(value == targetUsername for value in players.values()) > 1:
-        ipList = [k for k,v in players.items() if v == targetUsername]
-        while targetIp not in ipList:
-            targetIp = input(f"{Fore.CYAN}There are multiple IP's with the same username. Choose an IP from the list: " + ", ".join(ipList)+ f"\n{Style.RESET_ALL}")
+def sendAnswer(message):
+    global exitSignal
+    if hostIp == "":
+        #TODO this shouldnt ideally happen but if the host sends a goodbye packet, we can unset the hostIp and exit the game
+        print(f"{Fore.RED}Couldn't find host{Style.RESET_ALL}")
+        exitSignal = True
 
-    elif sum(value == targetUsername for value in players.values()) == 1:
-        targetIp = list(players.keys())[list(players.values()).index(targetUsername)]
-
-    # targetIp = input(f"{Fore.CYAN}IP of the receiver \n{Style.RESET_ALL}")
-    # message = input(f"{Fore.CYAN}Message \n{Style.RESET_ALL}")
-    send(targetIp,name=myName,ip=myIp,packetType=messageType,payload=message,logError=True)
+    send(hostIp,ip=myIp,packetType=answerType,payload=message,logError=True)
 
 def sender():
     global exitSignal
@@ -123,19 +115,19 @@ def sender():
         time.sleep(2)
 
     while(not exitSignal):
-        command = input(f"{Fore.CYAN}Enter a command or message\n{Style.RESET_ALL}")
-        if command == "addressBook()":
-            printAddressBook()
-        elif command == "exit()":
+        inputStr = input(f"{Fore.CYAN}Enter a command or message\n{Style.RESET_ALL}")
+        #TODO send ANSWER packet to the host with the choice index in payload
+
+        if inputStr == "exit()":
             exitSignal = True
-        # elif command == "message()":
-        #     sendMessage()
-        elif command == "discover()":
-            sendBroadcast(myIp,discoverType,3,f"{myName}; {gameCode}")
-        elif "; " in command:
-            sendMessage(command.split("; ",1)[0],command.split("; ",1)[1])
-        else:
+
+        try:
+            inputStr = int(inputStr) # if one of 0,1,2,3 is entered, send ANSWER packet
+        except:
             print(f"{Fore.RED}You did not enter a valid command \n{Style.RESET_ALL}")
+            return
+
+        sendAnswer(inputStr) #TODO check if sendAnswer func sends the answer to the host
 
 def exitGame():
     global exitSignal 

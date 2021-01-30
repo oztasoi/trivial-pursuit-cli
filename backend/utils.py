@@ -96,7 +96,7 @@ def createJsonString(ip="",packetType="",payload="",questionNum=0):
 
         packet[questionNumField] = questionNum
     elif packetType == answerType:
-        packet[startPeriodField] = time.time() 
+        packet[startPeriodField] = time.time() #this is the time that the question was answered
         packet[questionNumField] = questionNum
 
 

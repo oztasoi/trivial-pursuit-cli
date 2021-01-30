@@ -32,8 +32,8 @@ currentQuestion = {
     currQuestionNum : -1,
     currStartTime: -1,
     currEndTime: -1,
-    currCorrectChoice: -1
-    currAnswers : {}
+    currCorrectChoice: -1,
+    currAnswers: {},
 }
 
 players = bidict()
@@ -45,11 +45,28 @@ gameCode = 0
 exitSignal = False
 startSignal = False
 
-def printAddressBook():
-    print(f"{Fore.CYAN}Address book:")
-    for ip, username in players.items():
-        print(f"{username} ({ip})")
-    print(f"{Style.RESET_ALL}")    
+def updateScoreboard():
+    #TODO should we check if the ip in the "answers" is in the "players" dict???
+    #TODO how should we distribute points? 1st 3, 2nd 2, 2rd 1? TBD
+    res = dict(sorted(currentQuestion[currAnswers].items(), key=lambda item: item[1])) #sort according to timestamp
+    for i,ip in enumerate(res.keys()):
+        if i < 3:
+            scoreboard[ip] += 3-i
+        else:
+            return
+
+def updateAndPrintScoreboard():
+    global scoreboard
+
+    updateScoreboard()
+    scoreboard = dict(sorted(scoreboard.items(), key=lambda item: item[1])) #sort according to scores
+
+    print(f"{Fore.YELLOW}Scoreboard")
+    for i,item in enumerate(scoreboard.items(),1):
+        if i <= 3:
+            print(f"{Fore.YELLOW}{i}\t{Fore.GREEN}{players[item[0]]}\t{item[1]}{Style.RESET_ALL}")
+        else:
+            return
 
 def waitForPlayers():
     
@@ -105,6 +122,17 @@ def udpListener():
                         consumeUdp(message)
                     break
 
+def updateCurrentAnswers(message):
+    global currentQuestion
+    if ( 
+        message[questionNumField] == currentQuestion[currQuestionNum] 
+        and message[startPeriodField] <= currentQuestion[currEndTime] 
+        and message[startPeriodField] > currentQuestion[currStartTime] 
+        and message[payloadField] == currentQuestion[currCorrectChoice]
+        and not currentQuestion[currAnswers][message[ipField]]
+    ):
+        currentQuestion[currAnswers][message[ipField]] = message[startPeriodField]
+
 def consumeUdp(message):
     if typeField in message:
         if message[typeField] == discoverType: #valid in server
@@ -120,9 +148,7 @@ def consumeUdp(message):
             players.pop(message[ipField],None)
         elif message[typeField] == answerType:
             print(f"{Fore.RED}Answer received\n{Style.RESET_ALL}")
-            if message[questionNumField]==currentQuestion[currQuestionNum] and message[startPeriodField] <= currentQuestion[currEndTime] and message[startPeriodField] > currentQuestion[currStartTime]:
-                currentQuestion[currAnswers][message[ipField]] = message[startPeriodField]
-
+            updateCurrentAnswers()
         else: 
             print(f"{Fore.RED}Unknown message type\n{Style.RESET_ALL}")
     else:
@@ -165,33 +191,22 @@ def initializeHost():
         cmd = input(f"{Fore.MAGENTA}Type \"start\" when players are ready {Style.RESET_ALL}")  
     startGame()
 
-def sendMessage(targetUsername, message):
-    targetIp =""
-    if targetUsername not in players.values():
-        print(f"{Fore.RED}Username not in address book{Style.RESET_ALL}")
-        return
-    elif sum(value == targetUsername for value in players.values()) > 1:
-        ipList = [k for k,v in players.items() if v == targetUsername]
-        while targetIp not in ipList:
-            targetIp = input(f"{Fore.CYAN}There are multiple IP's with the same username. Choose an IP from the list: " + ", ".join(ipList)+ f"\n{Style.RESET_ALL}")
-
-    elif sum(value == targetUsername for value in players.values()) == 1:
-        targetIp = list(players.keys())[list(players.values()).index(targetUsername)]
-
-    # targetIp = input(f"{Fore.CYAN}IP of the receiver \n{Style.RESET_ALL}")
-    # message = input(f"{Fore.CYAN}Message \n{Style.RESET_ALL}")
-    send(targetIp,name=myName,ip=myIp,packetType=messageType,payload=message,logError=True)
-
 def play():
     subprocess.run(["clear"]) 
     print(f"{Fore.CYAN}Starting the game{Style.RESET_ALL}")
     for i,question in enumerate(createQuiz.questions,1):
+
+        if i!=1:
+            updateAndPrintScoreboard()
+            #TODO here we should also send POST_QUERY packets
+            #     will the whole scoreboard be broadcasted or will each player receive only his/her score?
+
         currentQuestion[currQuestionNum]=i
         currentQuestion[currAnswers]={}
         if exitSignal: #TODO this is meaningless, solve this issue!
             return
-        
-        print(f"{Fore.CYAN}Get ready for question {i}...{Style.RESET_ALL}")
+
+        print(f"{Fore.CYAN}\nGet ready for question {i}...{Style.RESET_ALL}")
         #broadcast PRE_QUERY packet
         sendBroadcast(myIp,preQueryType,3,questionNum=i)
         #PRE_QUERY period
@@ -213,15 +228,12 @@ def play():
         print(time.time())
 
         print(f"{Fore.CYAN}Time's up...{Style.RESET_ALL}")
+        
         #broadcast POST_QUERY packet
         time.sleep(POST_QUERY_DURATION)
         subprocess.run(["clear"])
+        print(f"{Fore.CYAN}Correct answer was {question['correct_answer']}{Style.RESET_ALL}")
         print(time.time())
-
-
-
-        
-
 
 def startGame():
     global startSignal
