@@ -2,8 +2,6 @@ import json
 import urllib
 import urllib.parse
 import urllib.request
-import html
-import random
 from colorama import Fore, Style
 
 '''
@@ -44,7 +42,7 @@ def getQuestions(categoryId,difficultyNum,numOfQ):
 
     questions=data["results"]
     print(f"{Fore.MAGENTA}Successfully retrieved the questions{Style.RESET_ALL}")
-    # print(questions)
+    return questions
 
 def listCategories():
     global categoryList
@@ -87,6 +85,32 @@ def chooseCategory():
         chosenCategory = int(input(f"{Fore.MAGENTA}Chosen id is not valid, please enter a valid id: {Style.RESET_ALL}"))
     return chosenCategory
 
+def chooseMultipleCategory():
+    print(f"{Fore.MAGENTA}Please choose and enter category ids from the following list:{Style.RESET_ALL}")
+
+    idList = listCategories()
+    numberOfCategories = int(input(f"{Fore.MAGENTA}Please enter number of categories you want to be questioned: {Style.RESET_ALL}"))
+    while len(idList) < numberOfCategories:
+        numberOfCategories = int(input(f"{Fore.MAGENTA}Invalid number of categories, please enter number of categories you want to be questioned: {Style.RESET_ALL}"))
+
+    chosenCategoryListString = str(input(f"{Fore.MAGENTA}Please enter {numberOfCategories} category ids you want to be questioned, seperated by comma: {Style.RESET_ALL}"))
+    categoryList = [int(category.strip()) for category in chosenCategoryListString.split(",")]
+
+    intersectingCategoryList = set(idList).intersection(set(categoryList))
+    invalidCategoryList = list(set(categoryList).difference(set(intersectingCategoryList)))
+    correctedCategoryList = list()
+
+    if len(invalidCategoryList) > 0:
+        print(f"{Fore.MAGENTA}Several category ids are not valid, please re-enter valid ids: {Style.RESET_ALL}")
+
+    for ix in range(len(invalidCategoryList)):
+        categoryId = int(input(f"{Fore.MAGENTA}Please enter an id: {Style.RESET_ALL}"))
+        while categoryId not in idList:
+            categoryId = int(input(f"{Fore.MAGENTA}Please enter an id: {Style.RESET_ALL}"))
+        correctedCategoryList.append(categoryId)
+
+    return list(intersectingCategoryList) + correctedCategoryList
+
 def chooseDifficulty():
     print(f"{Fore.MAGENTA}Please choose and enter a difficulty number from the following list:{Style.RESET_ALL}")
 
@@ -107,6 +131,3 @@ def chooseNumOfQuestions(categoryId,difficultyNum):
 
 def printCategoryList():
     pass
-
-
-# getQuestions(22,2,10)

@@ -1,16 +1,14 @@
 import json
-import re
 from threading import Thread
 import subprocess 
 import os
 import select
 import sys
 import socket
-import multiprocessing
 import html
 import time
 from colorama import Fore, Style
-from random import randint
+from random import randint, shuffle
 from bidict import bidict
 from collections import defaultdict 
 from utils import *
@@ -156,17 +154,62 @@ def consumeUdp(message):
 
 def configureGame():
     '''
+    Here, the host will configure the quiz mode:
+    One category or multiple categories
+    '''
+
+    quizStyleSet = set([1, 2])
+
+    print(f"{Fore.MAGENTA}Listing all quiz-modes: {Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}\t number \t quiz-mode{Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}\t 1 \t\t single{Style.RESET_ALL}")
+    print(f"{Fore.MAGENTA}\t 2 \t\t multiple{Style.RESET_ALL}")
+
+    quizStyle = int(input(f"{Fore.MAGENTA}Enter the quiz mode, single category or multiple categories: {Style.RESET_ALL}"))
+    while quizStyle not in quizStyleSet:
+        quizStyle = int(input(f"{Fore.MAGENTA}Invalid mode, re-enter quiz mode, either 1 or 2: {Style.RESET_ALL}"))
+
+    if quizStyle == 1:
+        configureSingleCategoryGame()
+    else:
+        configureMultipleCategoryGame()
+
+def configureSingleCategoryGame():
+    '''
     Here, the host will configure the quiz
     list the categories using the api
     user chooses category index
     user chooses number of questions
     user chooses difficulty
     '''
+
     categoryId = createQuiz.chooseCategory()
     difficultyNum = createQuiz.chooseDifficulty()
     numOfQ = createQuiz.chooseNumOfQuestions(categoryId,difficultyNum)
 
     createQuiz.getQuestions(categoryId,difficultyNum,numOfQ)
+
+def configureMultipleCategoryGame():
+    '''
+    Here, the host will configure the quiz
+    list the categories using the api
+    user chooses multiple categories
+    user chooses number of questions
+    user chooses difficulty
+    returned questions are shuffled
+    '''
+
+    categoryIds = createQuiz.chooseMultipleCategory()
+    quizQuestions = list()
+    for categoryId in categoryIds:
+        print(f"{Fore.MAGENTA}For category ID {categoryId}: {Style.RESET_ALL}")
+        difficultyNum = createQuiz.chooseDifficulty()
+        numOfQ = createQuiz.chooseNumOfQuestions(categoryId,difficultyNum)
+        currentQuestions = createQuiz.getQuestions(categoryId,difficultyNum,numOfQ)
+        quizQuestions += currentQuestions
+
+    shuffle(quizQuestions)
+    createQuiz.questions = quizQuestions
 
 def initializeHost():
     global gameCode

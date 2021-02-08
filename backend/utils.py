@@ -2,17 +2,10 @@ import json
 import re
 from threading import Thread
 import subprocess 
-import os
-import select
-import sys
 import socket
-import multiprocessing
 import time
 import host
 from colorama import Fore, Style
-from random import randint
-from bidict import bidict
-from collections import defaultdict 
 
 PRE_QUERY_DURATION = 2
 QUESTION_DURATION = 10
