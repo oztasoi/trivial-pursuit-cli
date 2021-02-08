@@ -277,7 +277,7 @@ def play():
         #broadcast POST_QUERY packet
         time.sleep(POST_QUERY_DURATION)
         # subprocess.run(["clear"])
-        print(f"{Fore.CYAN}Correct answer was {question['correct_answer']}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}Correct answer was {html.unescape(question['correct_answer'])}{Style.RESET_ALL}")
         print(time.time() + OFFSET)
         
         updateAndPrintScoreboard()
