@@ -67,7 +67,7 @@ def udpListener():
 
 def consumeUdp(message): #TODO this should be modified according to PRE_QUERY and POST_QUERY packets
     print("CONSUMING MESSAGE",message)
-    global hostIp, nextStartTime, nextEndTime
+    global hostIp, nextStartTime, nextEndTime, respondReceived
     if myIp == message[ipField]:
         print(f"{Fore.RED}Hearing echo\n{Style.RESET_ALL}")
     elif typeField in message:
@@ -84,8 +84,7 @@ def consumeUdp(message): #TODO this should be modified according to PRE_QUERY an
             print(f"{Fore.RED}ANSWER received, somethings wrong\n{Style.RESET_ALL}")
         elif message[typeField] == respondType: #valid in client
             #TODO check this logic
-            global respondReceived
-            if hostIp == "" and message[payloadField]==gameCode: #is this correct?
+            if hostIp == "" and message[payloadField]==str(gameCode): #is this correct?
                 hostIp = message[ipField]
                 respondReceived = True
     else:
@@ -94,7 +93,7 @@ def consumeUdp(message): #TODO this should be modified according to PRE_QUERY an
 def initializeClient():
     global myName
     global gameCode
-    subprocess.run(["clear"])
+    # subprocess.run(["clear"])
     print(f"{Fore.MAGENTA}Welcome to Scio!{Style.RESET_ALL}")    
 
     myName = input(f"{Fore.MAGENTA}Enter your username:\n{Style.RESET_ALL}")
@@ -117,9 +116,10 @@ def sendAnswer(message):
     send(hostIp,ip=myIp,packetType=answerType,payload=message,logError=True,questionNum=currentQuestion)
 
 def sender():
-    global exitSignal
-    global gameCode
+    global exitSignal, gameCode
+
     while not respondReceived:
+        print("respondReceived",respondReceived)
         gameCode = input(f"{Fore.CYAN}Enter the game code seen on the host screen\n{Style.RESET_ALL}")
         sendBroadcast(myIp,discoverType,3,f"{myName}; {gameCode}")
         time.sleep(2)
@@ -142,7 +142,7 @@ def sender():
                 return
 
             if inputInt in range(4):
-                sendAnswer(inputStr) #TODO check if sendAnswer func sends the answer to the host
+                sendAnswer(inputStr.strip()) #TODO check if sendAnswer func sends the answer to the host
 
 def exitGame():
     global exitSignal 

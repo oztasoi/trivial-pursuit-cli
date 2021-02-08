@@ -69,20 +69,20 @@ def updateAndPrintScoreboard():
 def waitForPlayers():
     
     while(not startSignal):
+        print("waiting for players...")
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind(('', PORT)) #(TODO) is that correct?
             s.setblocking(0)
             while not startSignal:
-                # print("Waiting for UDP")
+                print("Waiting for UDP")
                 result = select.select([s],[],[])
                 msg = result[0][0].recv(SIZE).decode("utf-8")
                 if msg:
-                    # print(msg)
+                    print("Data received udp: ",msg)
                     if msg == START_SIGNAL:
-                        # print( "Start signal received udp")
+                        print( "Start signal received udp")
                         return
 
-                    # print("Data received udp: ",data)
                     try:
                         message = json.loads(msg)
                     except:
@@ -96,6 +96,7 @@ def udpListener():
         pass
     
     while(not exitSignal):
+        print("listening...")
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind(('', PORT)) #(TODO) is that correct?
             s.setblocking(0)
@@ -135,11 +136,12 @@ def consumeUdp(message):
     if myIp == message[ipField]:
         print(f"{Fore.RED}Hearing echo\n{Style.RESET_ALL}")
     elif typeField in message:
+        print("CONSUMING MESSAGE", message)
         if message[typeField] == discoverType: #valid in server
             # addToAddressBook(message[ipField],message[nameField])
             senderIp = message[ipField]
             username, code = message[payloadField].split("; ")
-            if senderIp != myIp and code==gameCode:
+            if senderIp != myIp and code==str(gameCode):
                 players[senderIp] = username
                 print(f"{Fore.GREEN}Added ({message[ipField]}) {username} to the players list{Style.RESET_ALL}")    
                 send(targetIP=senderIp,ip=myIp, packetType=respondType,payload=gameCode)
@@ -215,7 +217,7 @@ def configureMultipleCategoryGame():
 
 def initializeHost():
     global gameCode
-    subprocess.run(["clear"])
+    # subprocess.run(["clear"])
     print(f"{Fore.MAGENTA}Welcome to Scio!")    
 
     print(f"Hello host! {Style.RESET_ALL}")  
@@ -233,11 +235,13 @@ def initializeHost():
 
     cmd = ""
     while(not cmd=="start"):
-        cmd = input(f"{Fore.MAGENTA}Type \"start\" when players are ready {Style.RESET_ALL}")  
+        cmd = input(f"{Fore.MAGENTA}Type \"start\" when players are ready {Style.RESET_ALL}")
+    
     startGame()
+    waitForPlayersThread.join()
 
 def play():
-    subprocess.run(["clear"]) 
+    # subprocess.run(["clear"]) 
     print(f"{Fore.CYAN}Starting the game{Style.RESET_ALL}")
     for i,question in enumerate(createQuiz.questions,1):
 
@@ -256,7 +260,7 @@ def play():
         sendBroadcast(myIp,preQueryType,3,questionNum=i)
         #PRE_QUERY period
         time.sleep(PRE_QUERY_DURATION)
-        subprocess.run(["clear"])
+        # subprocess.run(["clear"])
         print(time.time())
 
         #QUESTION period
@@ -269,14 +273,14 @@ def play():
             print(f"{Fore.YELLOW}{j} {Fore.CYAN}{html.unescape(choice)}{Style.RESET_ALL}")
 
         time.sleep(QUESTION_DURATION)
-        subprocess.run(["clear"])
+        # subprocess.run(["clear"])
         print(time.time())
 
         print(f"{Fore.CYAN}Time's up...{Style.RESET_ALL}")
         
         #broadcast POST_QUERY packet
         time.sleep(POST_QUERY_DURATION)
-        subprocess.run(["clear"])
+        # subprocess.run(["clear"])
         print(f"{Fore.CYAN}Correct answer was {question['correct_answer']}{Style.RESET_ALL}")
         print(time.time())
 
@@ -292,10 +296,12 @@ def exitGame():
     sendBroadcast(myIp,goodbyeType,3)
 
 def main():
+
     initializeHost()
 
     udpListenerThread = Thread(target=udpListener)
     udpListenerThread.start()
+
 
     # playThread = Thread(target=play)
     # playThread.start()

@@ -99,7 +99,7 @@ def send(targetIP,ip="",packetType="",payload="",questionNum=0,logError = False)
     #(TODO) type = bytes
     packet = str.encode(createJsonString(ip=ip, packetType=packetType, payload=payload, questionNum=questionNum))
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:  
-        # print(f"Sending {packet} to {targetIP}")
+        print(f"Sending {packet} to {targetIP}")
 
         for i in range(3):
             s.sendto(packet,(targetIP,PORT))
@@ -124,8 +124,10 @@ def sendBroadcast(senderIp,broadcastType,count=1,payload="",questionNum=0):
             msg = str.encode(createJsonString(ip=senderIp, packetType=broadcastType, questionNum=questionNum,payload=payload))
 
             print("BROADCAST MSG: ",msg)
-            # s.sendto(msg,('25.255.255.255',PORT))
-            broadcastIp = senderIp.rsplit(".",1)[0]+".255"
-            # s.sendto(msg,('<broadcast>',PORT)) #(TODO) değiştir
-            s.sendto(msg,(broadcastIp,PORT)) #(TODO) değiştir
+            s.sendto(msg,('25.255.255.255',PORT))
+            #s.sendto(msg,('<broadcast>',PORT)) #(TODO) değiştir
+
+            #broadcastIp = senderIp.rsplit(".",1)[0]+".255"
+            #s.sendto(msg,(broadcastIp,PORT)) #(TODO) değiştir
+
             # print("sending discover", msg)
