@@ -18,7 +18,6 @@ from utils import *
 This is the script that the users will run
 '''
 
-
 '''
 Every username must be unique (not so sure about this)
 If username is not unique, the user will be prompted to change its username
@@ -32,6 +31,10 @@ myIp = ""
 hostIp = ""
 myName = "" 
 gameCode = 0    
+
+nextStartTime = float("inf")
+nextEndTime = float("inf")
+currentQuestion = 0
 
 def udpListener():
     while(myName== "" or myIp==""):
@@ -63,13 +66,20 @@ def udpListener():
                     break
 
 def consumeUdp(message): #TODO this should be modified according to PRE_QUERY and POST_QUERY packets
-    print(message)
-    global hostIp
-    if typeField in message:
-        if message[typeField] == goodbyeType:
+    print("CONSUMING MESSAGE",message)
+    global hostIp, nextStartTime, nextEndTime
+    if myIp == message[ipField]:
+        print(f"{Fore.RED}Hearing echo\n{Style.RESET_ALL}")
+    elif typeField in message:
+        if message[typeField] == goodbyeType: #TODO napıcaz?
             senderIp = message[ipField]
             if senderIp==hostIp:
                 sendSignal(EXIT_SIGNAL,myIp)
+        elif message[typeField] == preQueryType:
+            nextStartTime = message[startPeriodField]
+            nextEndTime = message[endPeriodField]
+            currentQuestion = message[questionNumField]
+
         elif message[typeField] == answerType:
             print(f"{Fore.RED}ANSWER received, somethings wrong\n{Style.RESET_ALL}")
         elif message[typeField] == respondType: #valid in client
@@ -104,7 +114,7 @@ def sendAnswer(message):
         print(f"{Fore.RED}Couldn't find host{Style.RESET_ALL}")
         exitSignal = True
 
-    send(hostIp,ip=myIp,packetType=answerType,payload=message,logError=True)
+    send(hostIp,ip=myIp,packetType=answerType,payload=message,logError=True,questionNum=currentQuestion)
 
 def sender():
     global exitSignal
@@ -115,19 +125,24 @@ def sender():
         time.sleep(2)
 
     while(not exitSignal):
-        inputStr = input(f"{Fore.CYAN}Enter a command or message\n{Style.RESET_ALL}")
+
+        while(nextStartTime == float("inf")): pass
+        time.sleep(nextStartTime-time.time())    
+
+        inputStr = input(f"{Fore.YELLOW}Question {currentQuestion}{Fore.CYAN}Enter an answer in range 0-3\n{Style.RESET_ALL}")
         #TODO send ANSWER packet to the host with the choice index in payload
 
         if inputStr == "exit()":
             exitSignal = True
+        else:
+            try:
+                inputInt = int(inputStr) # if one of 0,1,2,3 is entered, send ANSWER packet
+            except:
+                print(f"{Fore.RED}You did not enter a valid command \n{Style.RESET_ALL}")
+                return
 
-        try:
-            inputStr = int(inputStr) # if one of 0,1,2,3 is entered, send ANSWER packet
-        except:
-            print(f"{Fore.RED}You did not enter a valid command \n{Style.RESET_ALL}")
-            return
-
-        sendAnswer(inputStr) #TODO check if sendAnswer func sends the answer to the host
+            if inputInt in range(4):
+                sendAnswer(inputStr) #TODO check if sendAnswer func sends the answer to the host
 
 def exitGame():
     global exitSignal 

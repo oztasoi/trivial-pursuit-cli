@@ -50,14 +50,14 @@ def listCategories():
     encoding = response.info().get_content_charset('utf-8')
     categoryList = json.loads(response.read().decode(encoding))["trivia_categories"]
     
-    print(f"{Fore.MAGENTA}\t id \t category name{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}\t id \t category name{Style.RESET_ALL}")
     for c in categoryList:
         print(f"{Fore.YELLOW}\t {c['id']}{Style.RESET_ALL}\t {c['name']}")
     
     return [x["id"] for x in categoryList]
 
 def listDifficulties():
-    print(f"{Fore.MAGENTA}\t number \t difficulty{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}\t number \t difficulty{Style.RESET_ALL}")
     for k,v in difficulties.items():
         print(f"{Fore.YELLOW}\t {k}{Style.RESET_ALL}\t {v}")
 

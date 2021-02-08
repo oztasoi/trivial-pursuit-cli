@@ -123,16 +123,18 @@ def udpListener():
 def updateCurrentAnswers(message):
     global currentQuestion
     if ( 
-        message[questionNumField] == currentQuestion[currQuestionNum] 
-        and message[startPeriodField] <= currentQuestion[currEndTime] 
-        and message[startPeriodField] > currentQuestion[currStartTime] 
-        and message[payloadField] == currentQuestion[currCorrectChoice]
+        int(message[questionNumField]) == currentQuestion[currQuestionNum] 
+        and float(message[startPeriodField]) <= currentQuestion[currEndTime] 
+        and float(message[startPeriodField]) > currentQuestion[currStartTime] 
+        and int(message[payloadField]) == currentQuestion[currCorrectChoice]
         and not currentQuestion[currAnswers][message[ipField]]
     ):
         currentQuestion[currAnswers][message[ipField]] = message[startPeriodField]
 
 def consumeUdp(message):
-    if typeField in message:
+    if myIp == message[ipField]:
+        print(f"{Fore.RED}Hearing echo\n{Style.RESET_ALL}")
+    elif typeField in message:
         if message[typeField] == discoverType: #valid in server
             # addToAddressBook(message[ipField],message[nameField])
             senderIp = message[ipField]
@@ -161,9 +163,9 @@ def configureGame():
     quizStyleSet = set([1, 2])
 
     print(f"{Fore.MAGENTA}Listing all quiz-modes: {Style.RESET_ALL}")
-    print(f"{Fore.MAGENTA}\t number \t quiz-mode{Style.RESET_ALL}")
-    print(f"{Fore.MAGENTA}\t 1 \t\t single{Style.RESET_ALL}")
-    print(f"{Fore.MAGENTA}\t 2 \t\t multiple{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}\t number \t quiz-mode{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}\t 1{Style.RESET_ALL} \t\t single")
+    print(f"{Fore.YELLOW}\t 2{Style.RESET_ALL} \t\t multiple")
 
     quizStyle = int(input(f"{Fore.MAGENTA}Enter the quiz mode, single category or multiple categories: {Style.RESET_ALL}"))
     while quizStyle not in quizStyleSet:
@@ -261,7 +263,7 @@ def play():
         print(f"{Fore.CYAN}Question {i}\n{html.unescape(question['question'])}")
         choices = question['incorrect_answers']
         correctChoice = randint(0,3)
-        currentQuestion[currCorrectChoice]=correctChoice
+        currentQuestion[currCorrectChoice]=correctChoice #TODO
         choices.insert(correctChoice,question['correct_answer'])
         for j,choice in enumerate(choices):
             print(f"{Fore.YELLOW}{j} {Fore.CYAN}{html.unescape(choice)}{Style.RESET_ALL}")
