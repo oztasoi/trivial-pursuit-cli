@@ -9,6 +9,7 @@ from colorama import Fore, Style
 import ntplib
 
 C = ntplib.NTPClient()
+OFFSET = C.request('europe.pool.ntp.org').offset
 
 PRE_QUERY_DURATION = 2
 QUESTION_DURATION = 10
@@ -82,7 +83,7 @@ def createJsonString(ip="",packetType="",payload="",questionNum=0):
         payloadField: payload,
     }
     if packetType == preQueryType:
-        start = C.request('europe.pool.ntp.org').tx_time + PRE_QUERY_DURATION
+        start = time.time() + OFFSET + PRE_QUERY_DURATION
         host.currentQuestion[host.currStartTime] = start
         packet[startPeriodField] = start
 
@@ -92,7 +93,7 @@ def createJsonString(ip="",packetType="",payload="",questionNum=0):
 
         packet[questionNumField] = questionNum
     elif packetType == answerType:
-        packet[startPeriodField] = C.request('europe.pool.ntp.org').tx_time #this is the time that the question was answered
+        packet[startPeriodField] = time.time() + OFFSET #this is the time that the question was answered
         packet[questionNumField] = questionNum
 
 

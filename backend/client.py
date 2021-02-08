@@ -67,7 +67,7 @@ def udpListener():
 
 def consumeUdp(message): #TODO this should be modified according to PRE_QUERY and POST_QUERY packets
     print("CONSUMING MESSAGE",message)
-    global hostIp, nextStartTime, nextEndTime, respondReceived
+    global hostIp, nextStartTime, nextEndTime, respondReceived, currentQuestion
     if myIp == message[ipField]:
         print(f"{Fore.RED}Hearing echo\n{Style.RESET_ALL}")
     elif typeField in message:
@@ -127,8 +127,9 @@ def sender():
     while(not exitSignal):
 
         while(nextStartTime == float("inf")): pass
+        q = currentQuestion
 
-        now = C.request('europe.pool.ntp.org').tx_time
+        now = time.time() + OFFSET
         print("next start and now:",nextStartTime,now)
         time.sleep(nextStartTime-now)    
 
@@ -146,6 +147,12 @@ def sender():
 
             if inputInt in range(4):
                 sendAnswer(inputStr.strip()) #TODO check if sendAnswer func sends the answer to the host
+
+        now = time.time() + OFFSET
+        print("next start and now:",nextStartTime,now)
+        time.sleep(nextEndTime-now)
+        
+        while(q==currentQuestion): pass
 
 def exitGame():
     global exitSignal 

@@ -262,7 +262,7 @@ def play():
         #PRE_QUERY period
         time.sleep(PRE_QUERY_DURATION)
         # subprocess.run(["clear"])
-        print(C.request('europe.pool.ntp.org').tx_time)
+        print(time.time() + OFFSET)
 
         #QUESTION period
         print(f"{Fore.CYAN}Question {i}\n{html.unescape(question['question'])}")
@@ -275,7 +275,7 @@ def play():
 
         time.sleep(QUESTION_DURATION)
         # subprocess.run(["clear"])
-        print(C.request('europe.pool.ntp.org').tx_time)
+        print(time.time() + OFFSET)
 
         print(f"{Fore.CYAN}Time's up...{Style.RESET_ALL}")
         
@@ -283,7 +283,7 @@ def play():
         time.sleep(POST_QUERY_DURATION)
         # subprocess.run(["clear"])
         print(f"{Fore.CYAN}Correct answer was {question['correct_answer']}{Style.RESET_ALL}")
-        print(C.request('europe.pool.ntp.org').tx_time)
+        print(time.time() + OFFSET)
 
 def startGame():
     global startSignal
