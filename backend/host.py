@@ -246,11 +246,6 @@ def play():
     print(f"{Fore.CYAN}Starting the game{Style.RESET_ALL}")
     for i,question in enumerate(createQuiz.questions,1):
 
-        if i!=1:
-            updateAndPrintScoreboard()
-            #TODO here we should also send POST_QUERY packets
-            #     will the whole scoreboard be broadcasted or will each player receive only his/her score?
-
         currentQuestion[currQuestionNum]=i
         currentQuestion[currAnswers]={}
         if exitSignal: #TODO this is meaningless, solve this issue!
@@ -284,6 +279,10 @@ def play():
         # subprocess.run(["clear"])
         print(f"{Fore.CYAN}Correct answer was {question['correct_answer']}{Style.RESET_ALL}")
         print(time.time() + OFFSET)
+        
+        updateAndPrintScoreboard()
+        #TODO here we should also send POST_QUERY packets
+        #     will the whole scoreboard be broadcasted or will each player receive only his/her score?
 
 def startGame():
     global startSignal
