@@ -84,7 +84,7 @@ def consumeUdp(message): #TODO this should be modified according to PRE_QUERY an
             print(f"{Fore.RED}ANSWER received, somethings wrong\n{Style.RESET_ALL}")
         elif message[typeField] == respondType: #valid in client
             #TODO check this logic
-            if hostIp == "" and message[payloadField]==str(gameCode): #is this correct?
+            if hostIp == "" and message[payloadField]==int(gameCode): #is this correct?
                 hostIp = message[ipField]
                 respondReceived = True
     else:
@@ -127,7 +127,10 @@ def sender():
     while(not exitSignal):
 
         while(nextStartTime == float("inf")): pass
-        time.sleep(nextStartTime-time.time())    
+
+        now = time.time()
+        print("next start and now:",nextStartTime,now)
+        time.sleep(nextStartTime-now)    
 
         inputStr = input(f"{Fore.YELLOW}Question {currentQuestion}{Fore.CYAN}Enter an answer in range 0-3\n{Style.RESET_ALL}")
         #TODO send ANSWER packet to the host with the choice index in payload
