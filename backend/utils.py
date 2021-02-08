@@ -4,7 +4,6 @@ from threading import Thread
 import subprocess 
 import socket
 import time
-import host
 from colorama import Fore, Style
 import ntplib
 
@@ -39,6 +38,20 @@ preQueryType = "PRE_QUERY"      #sent by host
 queryResultType= "QUERY_RESULT" #sent by host
 
 goodbyeType = "GOODBYE"
+
+currQuestionNum = "question number"
+currStartTime = "start time"
+currEndTime = "end time"
+currCorrectChoice = "correct choice"
+currAnswers = "answers"
+
+currentQuestion = {
+    currQuestionNum : -1,
+    currStartTime: -1,
+    currEndTime: -1,
+    currCorrectChoice: -1,
+    currAnswers: {},
+}
 
 # testing w hamachi
 # hamachiIpList = ["25.47.190.102","25.47.190.104", "25.43.1.132", ""]
@@ -77,6 +90,7 @@ def findIpList():
     return ip
 
 def createJsonString(ip="",packetType="",payload="",questionNum=0):
+    global currentQuestion
     packet = { 
         ipField: ip,
         typeField: packetType,
@@ -84,11 +98,11 @@ def createJsonString(ip="",packetType="",payload="",questionNum=0):
     }
     if packetType == preQueryType:
         start = time.time() + OFFSET + PRE_QUERY_DURATION
-        host.currentQuestion[host.currStartTime] = start
+        currentQuestion[currStartTime] = start
         packet[startPeriodField] = start
 
         end = start + QUESTION_DURATION
-        host.currentQuestion[host.currEndTime] = end
+        currentQuestion[currEndTime] = end
         packet[endPeriodField] = end
 
         packet[questionNumField] = questionNum
@@ -121,13 +135,14 @@ def sendSignal(signal,ip):
 def sendBroadcast(senderIp,broadcastType,count=1,payload="",questionNum=0):
     print(f"{Fore.MAGENTA}Sending {broadcastType}{Style.RESET_ALL}")
 
+    msg = str.encode(createJsonString(ip=senderIp, packetType=broadcastType, questionNum=questionNum,payload=payload))
+    # print("BROADCAST MSG: ",msg)
+
     for _ in range(count):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind(('',0))
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
-            msg = str.encode(createJsonString(ip=senderIp, packetType=broadcastType, questionNum=questionNum,payload=payload))
 
-            print("BROADCAST MSG: ",msg)
             s.sendto(msg,('25.255.255.255',PORT))
             #s.sendto(msg,('<broadcast>',PORT)) #(TODO) değiştir
 

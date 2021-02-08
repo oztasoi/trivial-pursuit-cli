@@ -21,22 +21,9 @@ If username is not unique, the user will be prompted to change its username
 Every game will have a random number (like Kahoot) and users will join the game using the number
 If a user drops out of the game, he/she will be able to rejoin using that number
 '''
-currQuestionNum = "question number"
-currStartTime = "start time"
-currEndTime = "end time"
-currCorrectChoice = "correct choice"
-currAnswers = "answers"
 
-currentQuestion = {
-    currQuestionNum : -1,
-    currStartTime: -1,
-    currEndTime: -1,
-    currCorrectChoice: -1,
-    currAnswers: {},
-}
-
-players = bidict()
-scoreboard = defaultdict(lambda: 0)
+players = {}
+scoreboard = defaultdict(int)
 
 myIp = "" 
 gameCode = 0
@@ -47,10 +34,12 @@ startSignal = False
 def updateScoreboard():
     #TODO should we check if the ip in the "answers" is in the "players" dict???
     #TODO how should we distribute points? 1st 3, 2nd 2, 2rd 1? TBD
+    global scoreboard
     res = dict(sorted(currentQuestion[currAnswers].items(), key=lambda item: item[1])) #sort according to timestamp
-    for i,ip in enumerate(res.keys()):
-        if i < 3:
-            scoreboard[ip] += 3-i
+    count = 0
+    for ip in res.keys():
+        if count < 3 and ip in players:
+            scoreboard[ip] =  scoreboard.get(ip, 0) + 3-count
         else:
             return
 
@@ -97,7 +86,6 @@ def udpListener():
         pass
     
     while(not exitSignal):
-        print("listening...")
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind(('', PORT)) #(TODO) is that correct?
             s.setblocking(0)
@@ -124,20 +112,31 @@ def udpListener():
 
 def updateCurrentAnswers(message):
     global currentQuestion
+
+    # print( "Printing if for message:", message)
+    # print(message[questionNumField] , currentQuestion[currQuestionNum])
+    # print(message[startPeriodField] , currentQuestion[currEndTime] )
+    # print(message[startPeriodField] , currentQuestion[currStartTime]) 
+    # print(int(message[payloadField]) , currentQuestion[currCorrectChoice])
+    # print(message[ipField] not in currentQuestion[currAnswers])
+
     if ( 
-        int(message[questionNumField]) == currentQuestion[currQuestionNum] 
-        and float(message[startPeriodField]) <= currentQuestion[currEndTime] 
-        and float(message[startPeriodField]) > currentQuestion[currStartTime] 
+        message[questionNumField] == currentQuestion[currQuestionNum] 
+        and message[startPeriodField] <= currentQuestion[currEndTime] 
+        and message[startPeriodField] > currentQuestion[currStartTime] 
         and int(message[payloadField]) == currentQuestion[currCorrectChoice]
-        and not currentQuestion[currAnswers][message[ipField]]
+        and message[ipField] not in currentQuestion[currAnswers]
     ):
         currentQuestion[currAnswers][message[ipField]] = message[startPeriodField]
+        print("updating current ans dict:", currentQuestion[currAnswers])
+
 
 def consumeUdp(message):
     if myIp == message[ipField]:
-        print(f"{Fore.RED}Hearing echo\n{Style.RESET_ALL}")
+        pass
+        # print(f"{Fore.RED}Hearing echo\n{Style.RESET_ALL}")
     elif typeField in message:
-        print("CONSUMING MESSAGE", message)
+        # print("CONSUMING MESSAGE", message)
         if message[typeField] == discoverType: #valid in server
             # addToAddressBook(message[ipField],message[nameField])
             senderIp = message[ipField]
@@ -148,6 +147,7 @@ def consumeUdp(message):
                 send(targetIP=senderIp,ip=myIp, packetType=respondType,payload=gameCode)
         elif message[typeField] == goodbyeType:
             #TODO what should we do if goodbye packet is received
+            print(f"Deleted {message[ipField]} from players")
             players.pop(message[ipField],None)
         elif message[typeField] == answerType:
             print(f"{Fore.RED}Answer received\n{Style.RESET_ALL}")
@@ -265,7 +265,7 @@ def play():
         print(time.time() + OFFSET)
 
         #QUESTION period
-        print(f"{Fore.CYAN}Question {i}\n{html.unescape(question['question'])}")
+        print(f"{Fore.CYAN}Question {i} out of {len(createQuiz.questions)}\n{html.unescape(question['question'])}")
         choices = question['incorrect_answers']
         correctChoice = randint(0,3)
         currentQuestion[currCorrectChoice]=correctChoice #TODO

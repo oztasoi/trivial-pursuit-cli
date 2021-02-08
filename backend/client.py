@@ -13,6 +13,7 @@ from random import randint
 from bidict import bidict
 from collections import defaultdict
 from utils import *
+from inputimeout import inputimeout, TimeoutOccurred
 
 '''
 This is the script that the users will run
@@ -132,12 +133,16 @@ def sender():
         now = time.time() + OFFSET
         print("next start and now:",nextStartTime,now)
         time.sleep(nextStartTime-now)    
-
-        inputStr = input(f"{Fore.YELLOW}Question {currentQuestion}{Fore.CYAN}Enter an answer in range 0-3\n{Style.RESET_ALL}")
-        #TODO send ANSWER packet to the host with the choice index in payload
+        try: 
+            inputStr = inputimeout(prompt=f"{Fore.YELLOW}Question {currentQuestion}\n{Fore.CYAN}Enter an answer in range 0-3\n{Style.RESET_ALL}",timeout=QUESTION_DURATION)
+        except:
+            print("You didn't answer the question")
+            inputStr = "NO ANSWER"
 
         if inputStr == "exit()":
             exitSignal = True
+        elif inputStr == "NO ANSWER":
+            pass
         else:
             try:
                 inputInt = int(inputStr) # if one of 0,1,2,3 is entered, send ANSWER packet
@@ -149,8 +154,9 @@ def sender():
                 sendAnswer(inputStr.strip()) #TODO check if sendAnswer func sends the answer to the host
 
         now = time.time() + OFFSET
-        print("next start and now:",nextStartTime,now)
-        time.sleep(nextEndTime-now)
+        print("next start and now:",nextEndTime,now)
+        if(now<nextEndTime):
+            time.sleep(nextEndTime-now)
         
         while(q==currentQuestion): pass
 
