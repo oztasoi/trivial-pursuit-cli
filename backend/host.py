@@ -1,4 +1,5 @@
 import json
+import ntplib
 from threading import Thread
 import subprocess 
 import os
@@ -150,7 +151,7 @@ def consumeUdp(message):
             players.pop(message[ipField],None)
         elif message[typeField] == answerType:
             print(f"{Fore.RED}Answer received\n{Style.RESET_ALL}")
-            updateCurrentAnswers()
+            updateCurrentAnswers(message)
         else: 
             print(f"{Fore.RED}Unknown message type\n{Style.RESET_ALL}")
     else:
@@ -261,7 +262,7 @@ def play():
         #PRE_QUERY period
         time.sleep(PRE_QUERY_DURATION)
         # subprocess.run(["clear"])
-        print(time.time())
+        print(C.request('europe.pool.ntp.org').tx_time)
 
         #QUESTION period
         print(f"{Fore.CYAN}Question {i}\n{html.unescape(question['question'])}")
@@ -274,7 +275,7 @@ def play():
 
         time.sleep(QUESTION_DURATION)
         # subprocess.run(["clear"])
-        print(time.time())
+        print(C.request('europe.pool.ntp.org').tx_time)
 
         print(f"{Fore.CYAN}Time's up...{Style.RESET_ALL}")
         
@@ -282,7 +283,7 @@ def play():
         time.sleep(POST_QUERY_DURATION)
         # subprocess.run(["clear"])
         print(f"{Fore.CYAN}Correct answer was {question['correct_answer']}{Style.RESET_ALL}")
-        print(time.time())
+        print(C.request('europe.pool.ntp.org').tx_time)
 
 def startGame():
     global startSignal

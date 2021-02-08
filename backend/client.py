@@ -128,7 +128,7 @@ def sender():
 
         while(nextStartTime == float("inf")): pass
 
-        now = time.time()
+        now = C.request('europe.pool.ntp.org').tx_time
         print("next start and now:",nextStartTime,now)
         time.sleep(nextStartTime-now)    
 
