@@ -120,6 +120,7 @@ def initializeClient():
 
     global myIp
     myIp = findIpList()
+    ipRegex(myIp)
     
 def sendAnswer(message):
     global exitSignal

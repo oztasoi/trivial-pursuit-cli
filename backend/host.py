@@ -40,6 +40,7 @@ def updateScoreboard():
 
     res = dict(sorted(currentQuestion[currAnswers].items(), key=lambda item: item[1])) #sort according to timestamp
 
+    resKeys = list(res.keys())
     firstIp = resKeys[0]
     lastIp = resKeys[-1]
     if firstIp == lastIp:
@@ -84,15 +85,11 @@ def waitForPlayers():
                 result = select.select([s],[],[])
                 msg = result[0][0].recv(SIZE).decode("utf-8")
                 if msg:
-                    print("Data received udp: ",msg)
                     if msg == START_SIGNAL:
-                        print( "Start signal received udp")
                         return
-
                     try:
                         message = json.loads(msg)
                     except:
-                        # print(f"{Fore.RED}Wrong JSON format received:{Style.RESET_ALL} {datum}, bu kadar udp")
                         continue
                     consumeUdp(message)
                     break
@@ -106,36 +103,22 @@ def udpListener():
             s.bind(('', PORT)) #(TODO) is that correct?
             s.setblocking(0)
             while not exitSignal:
-                # print("Waiting for UDP")
                 result = select.select([s],[],[])
                 msg = result[0][0].recv(SIZE)
                 if msg:
-                    # print(msg)
                     if msg == EXIT_SIGNAL:
-                        # print( "Exit signal received udp")
                         return
                     data = msg.decode("utf-8").strip().split('\n')
-
-                    # print("Data received udp: ",data)
                     for datum in data:
                         try:
                             message = json.loads(datum)
                         except:
-                            # print(f"{Fore.RED}Wrong JSON format received:{Style.RESET_ALL} {datum}, bu kadar udp")
                             continue
                         consumeUdp(message)
                     break
 
 def updateCurrentAnswers(message):
     global currentQuestion
-
-    # print( "Printing if for message:", message)
-    # print(message[questionNumField] , currentQuestion[currQuestionNum])
-    # print(message[startPeriodField] , currentQuestion[currEndTime] )
-    # print(message[startPeriodField] , currentQuestion[currStartTime]) 
-    # print(int(message[payloadField]) , currentQuestion[currCorrectChoice])
-    # print(message[ipField] not in currentQuestion[currAnswers])
-
     if ( 
         message[questionNumField] == currentQuestion[currQuestionNum] 
         and message[startPeriodField] <= currentQuestion[currEndTime] 
@@ -144,18 +127,15 @@ def updateCurrentAnswers(message):
         and message[ipField] not in currentQuestion[currAnswers]
     ):
         currentQuestion[currAnswers][message[ipField]] = message[startPeriodField]
-        print("updating current ans dict:", currentQuestion[currAnswers])
-
 
 def consumeUdp(message):
     if myIp == message[ipField]:
         pass
-        # print(f"{Fore.RED}Hearing echo\n{Style.RESET_ALL}")
     elif typeField in message:
-        # print("CONSUMING MESSAGE", message)
         if message[typeField] == discoverType: #valid in server
-            # addToAddressBook(message[ipField],message[nameField])
             senderIp = message[ipField]
+            if senderIp in players:
+                return
             username, code = message[payloadField].split("; ")
             if senderIp != myIp and code==str(gameCode):
                 players[senderIp] = username
@@ -163,10 +143,15 @@ def consumeUdp(message):
                 send(targetIP=senderIp,ip=myIp, packetType=respondType,payload=gameCode)
         elif message[typeField] == goodbyeType:
             #TODO what should we do if goodbye packet is received
-            print(f"{Fore.RED}Deleted {message[ipField]} from players{Style.RESET_ALL}")
-            players.pop(message[ipField],None)
+            senderIp = message[ipField]
+            if senderIp in players:
+                players.pop(message[ipField],None)
+                print(f"{Fore.RED}Deleted {message[ipField]} from players{Style.RESET_ALL}")
         elif message[typeField] == answerType:
-            print(f"{Fore.RED}Answer received\n{Style.RESET_ALL}")
+            senderIp = message[ipField]
+            if senderIp in currentQuestion[currAnswers]:
+                return
+            # print(f"{Fore.RED}Answer received{Style.RESET_ALL}")
             updateCurrentAnswers(message)
         else: 
             print(f"{Fore.RED}Unknown message type\n{Style.RESET_ALL}")
@@ -256,11 +241,11 @@ def initializeHost():
     global gameCode
     subprocess.run(["clear"])
     print(f"{Fore.MAGENTA}Welcome to Scio!")    
-
     print(f"Hello host! {Style.RESET_ALL}")  
 
     global myIp
     myIp = findIpList()
+    ipRegex(myIp)
 
     configureGame()
     
@@ -272,7 +257,7 @@ def initializeHost():
 
     cmd = ""
     while(not cmd=="start"):
-        cmd = input(f"{Fore.MAGENTA}Type \"start\" when players are ready {Style.RESET_ALL}")
+        cmd = input(f"{Fore.MAGENTA}Type \"start\" when players are ready\n{Style.RESET_ALL}")
     
     startGame()
     waitForPlayersThread.join()
@@ -290,7 +275,7 @@ def play():
         subprocess.run(["clear"])
         print(f"{Fore.MAGENTA}Game Code: {gameCode}\n{Style.RESET_ALL}")
 
-        print(f"{Fore.CYAN}\nGet ready for question {i}...{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}Get ready for question {i}...{Style.RESET_ALL}")
         #broadcast PRE_QUERY packet
         sendBroadcast(myIp,preQueryType,3,questionNum=i)
         #PRE_QUERY period
@@ -321,8 +306,6 @@ def play():
         sendBroadcast(myIp,postQueryType,3,questionNum=i, payload=top3scoreboard)
         time.sleep(POST_QUERY_DURATION)
 
-
-
 def startGame():
     global startSignal
     startSignal = True
@@ -335,16 +318,11 @@ def exitGame():
     sendBroadcast(myIp,goodbyeType,3)
 
 def main():
-
     initializeHost()
 
     udpListenerThread = Thread(target=udpListener)
     udpListenerThread.start()
 
-
-    # playThread = Thread(target=play)
-    # playThread.start()
-    # playThread.join()
     play()
     exitGame()
 

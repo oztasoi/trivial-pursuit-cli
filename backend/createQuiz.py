@@ -89,7 +89,6 @@ def chooseCustomQuiz():
 
     chosenQuiz = int(input(f"{Fore.MAGENTA}Please enter an id: {Style.RESET_ALL}"))
     while chosenQuiz not in range(len(qlist)):
-        print(chosenQuiz)
         chosenQuiz = int(input(f"{Fore.MAGENTA}Chosen id is not valid, please enter a valid id: {Style.RESET_ALL}"))
     return qlist[chosenQuiz]
 
@@ -100,7 +99,6 @@ def chooseCategory():
 
     chosenCategory = int(input(f"{Fore.MAGENTA}Please enter an id: {Style.RESET_ALL}"))
     while chosenCategory not in idList:
-        print(chosenCategory)
         chosenCategory = int(input(f"{Fore.MAGENTA}Chosen id is not valid, please enter a valid id: {Style.RESET_ALL}"))
     return chosenCategory
 

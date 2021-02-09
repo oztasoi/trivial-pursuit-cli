@@ -21,6 +21,8 @@ SIZE = 1024
 EXIT_SIGNAL = str.encode("EXIT_SIG")
 START_SIGNAL = str.encode("START_SIG")
 
+BROADCAST_IP = "25.255.255.255"
+
 nameField = "NAME" #can be received from respond's payload
 ipField = "MY_IP"
 typeField = "TYPE"
@@ -64,6 +66,20 @@ def quizInspector():
     '''
     qlist = sorted([ f for f in os.listdir("../quizzes")], key=str.lower)
     return qlist
+
+def ipRegex(ip):
+    global BROADCAST_IP
+    local_pat = re.compile("^192.168.[0-9]{1,3}.[0-9]{1,3}$")
+    hamachi_pat = re.compile("^25.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$")
+    hamachi_match = hamachi_pat.match(ip)
+    local_match = local_pat.match(ip)
+    if hamachi_match is not None:
+        BROADCAST_IP = "25.255.255.255"
+        return
+    if local_match is not None:
+        ipFragments = local_match.group().split(".")
+        BROADCAST_IP = ".".join(ipFragments[:3]) + ".255"
+        return
 
 def searchForIp(string):
     regexp ='(?<=inet )192.\d+.\d+.\d+'
@@ -126,36 +142,26 @@ def send(targetIP,ip="",packetType="",payload="",questionNum=0,logError = False)
     #(TODO) type = bytes
     packet = str.encode(createJsonString(ip=ip, packetType=packetType, payload=payload, questionNum=questionNum))
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:  
-        # print(f"Sending {packet} to {targetIP}")
-
         for i in range(3):
             s.sendto(packet,(targetIP,PORT))
 
-    if logError == True:        
+    if logError == True:
         print(f"{Fore.GREEN}Sending answer:{Style.RESET_ALL} {payload}") 
 
 def sendSignal(signal,ip):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s: 
-        #(TODO) BURADA SIKINTI VAR BENCE 
-        # s.bind(('',PORT))
-        # s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
+        #(TODO) BURADA SIKINTI VAR BENCE
         s.sendto(signal,(ip,PORT))   
 
 def sendBroadcast(senderIp,broadcastType,count=1,payload="",questionNum=0):
-    # print(f"{Fore.MAGENTA}Sending {broadcastType}{Style.RESET_ALL}")
-
     msg = str.encode(createJsonString(ip=senderIp, packetType=broadcastType, questionNum=questionNum,payload=payload))
-    # print("BROADCAST MSG: ",msg)
-
     for _ in range(count):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind(('',0))
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST,1)
 
-            s.sendto(msg,('25.255.255.255',PORT))
+            s.sendto(msg,(BROADCAST_IP,PORT))
             #s.sendto(msg,('<broadcast>',PORT)) #(TODO) değiştir
 
             #broadcastIp = senderIp.rsplit(".",1)[0]+".255"
             #s.sendto(msg,(broadcastIp,PORT)) #(TODO) değiştir
-
-            # print("sending discover", msg)
