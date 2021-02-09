@@ -43,7 +43,7 @@ def udpListener():
     
     while(not exitSignal):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.bind(('', PORT)) #(TODO) is that correct?
+            s.bind(('', PORT)) 
             s.setblocking(0)
             while not exitSignal:
                 # print("Waiting for UDP")
@@ -66,13 +66,14 @@ def udpListener():
                         consumeUdp(message)
                     break
 
-def consumeUdp(message): #TODO this should be modified according to PRE_QUERY and POST_QUERY packets
-    print("CONSUMING MESSAGE",message)
+def consumeUdp(message): 
+    # print("CONSUMING MESSAGE",message)
     global hostIp, nextStartTime, nextEndTime, respondReceived, currentQuestion
     if myIp == message[ipField]:
-        print(f"{Fore.RED}Hearing echo\n{Style.RESET_ALL}")
+        #print(f"{Fore.RED}Hearing echo\n{Style.RESET_ALL}")
+        pass
     elif typeField in message:
-        if message[typeField] == goodbyeType: #TODO napıcaz?
+        if message[typeField] == goodbyeType:
             senderIp = message[ipField]
             if senderIp==hostIp:
                 sendSignal(EXIT_SIGNAL,myIp)
@@ -138,12 +139,12 @@ def sender():
         time.sleep(2)
 
     while(not exitSignal):
+        subprocess.run(["clear"])
 
         while(nextStartTime == float("inf")): pass
         q = currentQuestion
 
         now = time.time() + OFFSET
-        print("next start and now:",nextStartTime,now)
         time.sleep(nextStartTime-now)    
         try: 
             inputStr = inputimeout(prompt=f"{Fore.YELLOW}Question {currentQuestion}\n{Fore.CYAN}Enter an answer in range 0-3\n{Style.RESET_ALL}",timeout=QUESTION_DURATION)
@@ -163,10 +164,11 @@ def sender():
                 return
 
             if inputInt in range(4):
-                sendAnswer(inputStr.strip()) #TODO check if sendAnswer func sends the answer to the host
+                sendAnswer(inputStr.strip()) 
+            else:
+                print(f"{Fore.RED}You did not enter a valid number \n{Style.RESET_ALL}")
 
         now = time.time() + OFFSET
-        print("next start and now:",nextEndTime,now)
         if(now<nextEndTime):
             time.sleep(nextEndTime-now)
         

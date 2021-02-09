@@ -132,7 +132,7 @@ def send(targetIP,ip="",packetType="",payload="",questionNum=0,logError = False)
             s.sendto(packet,(targetIP,PORT))
 
     if logError == True:        
-        print(f"{Fore.GREEN}Message to {targetIP} :{Style.RESET_ALL} {payload}") 
+        print(f"{Fore.GREEN}Sending answer:{Style.RESET_ALL} {payload}") 
 
 def sendSignal(signal,ip):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s: 
