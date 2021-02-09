@@ -51,7 +51,8 @@ def updateScoreboard():
     difference = float(lastTimestamp) - float(firstTimestamp)
     for ip in res.keys():
         if ip in players:
-            scoreboard[ip] =  scoreboard.get(ip, 0) + (float(res[ip] - firstTimestamp) / difference) * 1000
+            points = 400 + (1.0-(float(res[ip] - firstTimestamp) / difference)) * 600
+            scoreboard[ip] =  scoreboard.get(ip, 0) + points
         else:
             return
 
@@ -59,7 +60,7 @@ def updateAndPrintScoreboard():
     global scoreboard
 
     updateScoreboard()
-    scoreboard = dict(sorted(scoreboard.items(), key=lambda item: item[1])) #sort according to scores
+    scoreboard = dict(sorted(scoreboard.items(), key=lambda item: item[1], reverse=True)) #sort according to scores
     top3scoreboard = printScoreboard(scoreboard)
     return top3scoreboard
 
