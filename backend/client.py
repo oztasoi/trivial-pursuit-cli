@@ -76,11 +76,14 @@ def consumeUdp(message): #TODO this should be modified according to PRE_QUERY an
             senderIp = message[ipField]
             if senderIp==hostIp:
                 sendSignal(EXIT_SIGNAL,myIp)
+                try:
+                    sys.exit(0)
+                except SystemExit:
+                    os._exit(0)
         elif message[typeField] == preQueryType:
             nextStartTime = message[startPeriodField]
             nextEndTime = message[endPeriodField]
             currentQuestion = message[questionNumField]
-
         elif message[typeField] == answerType:
             print(f"{Fore.RED}ANSWER received, somethings wrong\n{Style.RESET_ALL}")
         elif message[typeField] == respondType: #valid in client
@@ -88,8 +91,16 @@ def consumeUdp(message): #TODO this should be modified according to PRE_QUERY an
             if hostIp == "" and message[payloadField]==int(gameCode): #is this correct?
                 hostIp = message[ipField]
                 respondReceived = True
+        elif message[typeField] == postQueryType:
+            currentScoreboard = message[payloadField]
+            displayScoreboard(currentScoreboard)
     else:
         print(f"{Fore.RED}No type field in message (UDP)\n{Style.RESET_ALL}")
+
+def displayScoreboard(currentScoreboard):
+    print(f"{Fore.YELLOW}Scoreboard")
+    for i,item in enumerate(currentScoreboard.items(),1):
+        print(f"{Fore.YELLOW}{i}\t{Fore.GREEN}{item[0]}\t{item[1]}{Style.RESET_ALL}")
 
 def initializeClient():
     global myName

@@ -1,5 +1,6 @@
 import json
 import re
+import os
 from threading import Thread
 import subprocess 
 import socket
@@ -35,6 +36,7 @@ answerType = "ANSWER"           #sent by client
 respondType = "RESPOND"         #sent by host
 preTopicType = "PRE_TOPIC"      #sent by host
 preQueryType = "PRE_QUERY"      #sent by host
+postQueryType = "POST_QUERY"    #sent by host
 queryResultType= "QUERY_RESULT" #sent by host
 
 goodbyeType = "GOODBYE"
@@ -55,6 +57,13 @@ currentQuestion = {
 
 # testing w hamachi
 # hamachiIpList = ["25.47.190.102","25.47.190.104", "25.43.1.132", ""]
+
+def quizInspector():
+    '''
+    Retrieves the name of files in quizzes
+    '''
+    qlist = sorted([ f for f in os.listdir("../quizzes")], key=str.lower)
+    return qlist
 
 def searchForIp(string):
     regexp ='(?<=inet )192.\d+.\d+.\d+'

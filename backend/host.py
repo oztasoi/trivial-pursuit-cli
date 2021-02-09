@@ -48,13 +48,19 @@ def updateAndPrintScoreboard():
 
     updateScoreboard()
     scoreboard = dict(sorted(scoreboard.items(), key=lambda item: item[1])) #sort according to scores
+    top3scoreboard = printScoreboard(scoreboard)
+    return top3scoreboard
 
+def printScoreboard(scoreboard):
     print(f"{Fore.YELLOW}Scoreboard")
+    top3scoreboard = {}
     for i,item in enumerate(scoreboard.items(),1):
+        username = players[item[0]]
+        score = item[1]
+        print(f"{Fore.YELLOW}{i}\t{Fore.GREEN}{username}\t{score}{Style.RESET_ALL}")
         if i <= 3:
-            print(f"{Fore.YELLOW}{i}\t{Fore.GREEN}{players[item[0]]}\t{item[1]}{Style.RESET_ALL}")
-        else:
-            return
+            top3scoreboard[i] = {"name": username, "score": score}
+    return top3scoreboard
 
 def waitForPlayers():
     
@@ -163,21 +169,24 @@ def configureGame():
     One category or multiple categories
     '''
 
-    quizStyleSet = set([1, 2])
+    quizStyleSet = set([1, 2, 3])
 
     print(f"{Fore.MAGENTA}Listing all quiz-modes: {Style.RESET_ALL}")
     print(f"{Fore.YELLOW}\t number \t quiz-mode{Style.RESET_ALL}")
     print(f"{Fore.YELLOW}\t 1{Style.RESET_ALL} \t\t single")
     print(f"{Fore.YELLOW}\t 2{Style.RESET_ALL} \t\t multiple")
+    print(f"{Fore.YELLOW}\t 3{Style.RESET_ALL} \t\t custom")
 
     quizStyle = int(input(f"{Fore.MAGENTA}Enter the quiz mode, single category or multiple categories: {Style.RESET_ALL}"))
     while quizStyle not in quizStyleSet:
-        quizStyle = int(input(f"{Fore.MAGENTA}Invalid mode, re-enter quiz mode, either 1 or 2: {Style.RESET_ALL}"))
+        quizStyle = int(input(f"{Fore.MAGENTA}Invalid mode, re-enter quiz mode, either 1, 2 or 3: {Style.RESET_ALL}"))
 
     if quizStyle == 1:
         configureSingleCategoryGame()
-    else:
+    elif quizStyle == 2:
         configureMultipleCategoryGame()
+    else:
+        configureACustomGame()
 
 def configureSingleCategoryGame():
     '''
@@ -216,6 +225,23 @@ def configureMultipleCategoryGame():
     shuffle(quizQuestions)
     createQuiz.questions = quizQuestions
 
+def configureACustomGame():
+    '''
+    Here, the host will upload a quiz from
+    ./quizzes directory and selects it.
+    '''
+
+    selectedQuiz = createQuiz.chooseCustomQuiz()
+    if not selectedQuiz:
+        print(f"{Fore.MAGENTA}There's no custom made quizzes in your `quizzes` folder.\nCheck your folder{Style.RESET_ALL}")
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)
+    fin = open(f"../quizzes/{selectedQuiz}", "r")
+    uploadedQuiz = json.load(fin)
+    createQuiz.questions = uploadedQuiz
+
 def initializeHost():
     global gameCode
     # subprocess.run(["clear"])
@@ -242,7 +268,7 @@ def initializeHost():
     waitForPlayersThread.join()
 
 def play():
-    # subprocess.run(["clear"]) 
+    subprocess.run(["clear"])
     print(f"{Fore.CYAN}Starting the game{Style.RESET_ALL}")
     for i,question in enumerate(createQuiz.questions,1):
 
@@ -256,7 +282,7 @@ def play():
         sendBroadcast(myIp,preQueryType,3,questionNum=i)
         #PRE_QUERY period
         time.sleep(PRE_QUERY_DURATION)
-        # subprocess.run(["clear"])
+        subprocess.run(["clear"])
         print(time.time() + OFFSET)
 
         #QUESTION period
@@ -269,18 +295,19 @@ def play():
             print(f"{Fore.YELLOW}{j} {Fore.CYAN}{html.unescape(choice)}{Style.RESET_ALL}")
 
         time.sleep(QUESTION_DURATION)
-        # subprocess.run(["clear"])
+        subprocess.run(["clear"])
         print(time.time() + OFFSET)
 
         print(f"{Fore.CYAN}Time's up...{Style.RESET_ALL}")
         
         #broadcast POST_QUERY packet
-        time.sleep(POST_QUERY_DURATION)
-        # subprocess.run(["clear"])
+        subprocess.run(["clear"])
         print(f"{Fore.CYAN}Correct answer was {html.unescape(question['correct_answer'])}{Style.RESET_ALL}")
         print(time.time() + OFFSET)
         
-        updateAndPrintScoreboard()
+        top3scoreboard = updateAndPrintScoreboard()
+        sendBroadcast(myIp,postQueryType,3,questionNum=i, payload=top3scoreboard)
+        time.sleep(POST_QUERY_DURATION)
         #TODO here we should also send POST_QUERY packets
         #     will the whole scoreboard be broadcasted or will each player receive only his/her score?
 

@@ -1,3 +1,4 @@
+import utils
 import json
 import urllib
 import urllib.parse
@@ -73,6 +74,24 @@ def listAvailableAmount(categoryId, difficulty):
 
     print(f"{Fore.MAGENTA}Number of questions available: {Fore.MAGENTA}{countList[key]}{Style.RESET_ALL}")
     return countList[key]
+
+
+def chooseCustomQuiz():
+    print(f"{Fore.MAGENTA}Please choose and enter a custom quiz from the following list:{Style.RESET_ALL}")    
+
+    qlist = utils.quizInspector()
+    if len(qlist) == 0:
+        return None
+    print(f"{Fore.YELLOW}\t id \t quiz name{Style.RESET_ALL}")
+    for ix, q in enumerate(qlist):
+        quizName = q.split(".json")[0]
+        print(f"{Fore.YELLOW}\t {ix}{Style.RESET_ALL}\t {quizName}")
+
+    chosenQuiz = int(input(f"{Fore.MAGENTA}Please enter an id: {Style.RESET_ALL}"))
+    while chosenQuiz not in range(len(qlist)):
+        print(chosenQuiz)
+        chosenQuiz = int(input(f"{Fore.MAGENTA}Chosen id is not valid, please enter a valid id: {Style.RESET_ALL}"))
+    return qlist[chosenQuiz]
 
 def chooseCategory():
     print(f"{Fore.MAGENTA}Please choose and enter a category id from the following list:{Style.RESET_ALL}")    
