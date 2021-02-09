@@ -105,7 +105,7 @@ def displayScoreboard(currentScoreboard):
 def initializeClient():
     global myName
     global gameCode
-    # subprocess.run(["clear"])
+    subprocess.run(["clear"])
     print(f"{Fore.MAGENTA}Welcome to Scio!{Style.RESET_ALL}")    
 
     myName = input(f"{Fore.MAGENTA}Enter your username:\n{Style.RESET_ALL}")

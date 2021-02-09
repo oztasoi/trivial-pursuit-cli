@@ -244,7 +244,7 @@ def configureACustomGame():
 
 def initializeHost():
     global gameCode
-    # subprocess.run(["clear"])
+    subprocess.run(["clear"])
     print(f"{Fore.MAGENTA}Welcome to Scio!")    
 
     print(f"Hello host! {Style.RESET_ALL}")  
