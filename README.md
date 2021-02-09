@@ -67,7 +67,8 @@ Below, you can find how to run our CLI app.
 - How does custom quiz mode works?
     - Add your customized quiz as a JSON file into `quizzes` directory, then you are able to see them in your host session as options in quiz mode 3, custom.
     - Example quiz.json:
-        - `[
+        ```json
+        [
             {
                 "category":"Art",
                 "type":"multiple",
@@ -92,7 +93,8 @@ Below, you can find how to run our CLI app.
                     "Raphael"
                 ]
             }
-            ]`
+            ]
+        ```
 
 - Does Scio support Hamachi Networks?
     - Yes, you can create your Hamachi network and add your friends, then you can select your IP as your Hamachi IP while playing.
