@@ -3,7 +3,7 @@
 ## <span style="color:green">Made by Alkım Ece Toprak & Ibrahim Ozgurcan Oztas</span>
 
 Welcome to our CLI-Based "Trivial Pursuit"-"Kahoot" combined game, Scio!
-Here, you can have your friends play with you and challenge your knowledge with different set of questions, even with your customized quizzes.
+Here, you can have your friends play with you and challenge your knowledge with different sets of questions, even with your customized quizzes.
 It is based as a CLI application, yet it has potential to evolve into an advanced form, which would have its GUI as a web application and a mobile app, and its backend as an opensource API.
 
 ## <span style="color:green">Challenges Encountered:</span>
