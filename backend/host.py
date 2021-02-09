@@ -35,11 +35,11 @@ def updateScoreboard():
     #TODO should we check if the ip in the "answers" is in the "players" dict???
     #TODO how should we distribute points? 1st 3, 2nd 2, 2rd 1? TBD
     global scoreboard
+    if len(currentQuestion[currAnswers]) == 0:
+        return
+
     res = dict(sorted(currentQuestion[currAnswers].items(), key=lambda item: item[1])) #sort according to timestamp
 
-    resKeys = list(res.keys())
-    if len(resKeys) == 0:
-        return
     firstIp = resKeys[0]
     lastIp = resKeys[-1]
     if firstIp == lastIp:
