@@ -126,7 +126,7 @@ def send(targetIP,ip="",packetType="",payload="",questionNum=0,logError = False)
     #(TODO) type = bytes
     packet = str.encode(createJsonString(ip=ip, packetType=packetType, payload=payload, questionNum=questionNum))
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:  
-        print(f"Sending {packet} to {targetIP}")
+        # print(f"Sending {packet} to {targetIP}")
 
         for i in range(3):
             s.sendto(packet,(targetIP,PORT))
@@ -142,7 +142,7 @@ def sendSignal(signal,ip):
         s.sendto(signal,(ip,PORT))   
 
 def sendBroadcast(senderIp,broadcastType,count=1,payload="",questionNum=0):
-    print(f"{Fore.MAGENTA}Sending {broadcastType}{Style.RESET_ALL}")
+    # print(f"{Fore.MAGENTA}Sending {broadcastType}{Style.RESET_ALL}")
 
     msg = str.encode(createJsonString(ip=senderIp, packetType=broadcastType, questionNum=questionNum,payload=payload))
     # print("BROADCAST MSG: ",msg)

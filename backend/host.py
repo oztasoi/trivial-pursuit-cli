@@ -67,12 +67,10 @@ def printScoreboard(scoreboard):
 def waitForPlayers():
     
     while(not startSignal):
-        print("waiting for players...")
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.bind(('', PORT)) #(TODO) is that correct?
             s.setblocking(0)
             while not startSignal:
-                print("Waiting for UDP")
                 result = select.select([s],[],[])
                 msg = result[0][0].recv(SIZE).decode("utf-8")
                 if msg:
@@ -155,7 +153,7 @@ def consumeUdp(message):
                 send(targetIP=senderIp,ip=myIp, packetType=respondType,payload=gameCode)
         elif message[typeField] == goodbyeType:
             #TODO what should we do if goodbye packet is received
-            print(f"Deleted {message[ipField]} from players")
+            print(f"{Fore.RED}Deleted {message[ipField]} from players{Style.RESET_ALL}")
             players.pop(message[ipField],None)
         elif message[typeField] == answerType:
             print(f"{Fore.RED}Answer received\n{Style.RESET_ALL}")
@@ -279,12 +277,16 @@ def play():
         if exitSignal: #TODO this is meaningless, solve this issue!
             return
 
+        subprocess.run(["clear"])
+        print(f"{Fore.MAGENTA}Game Code: {gameCode}\n{Style.RESET_ALL}")
+
         print(f"{Fore.CYAN}\nGet ready for question {i}...{Style.RESET_ALL}")
         #broadcast PRE_QUERY packet
         sendBroadcast(myIp,preQueryType,3,questionNum=i)
         #PRE_QUERY period
         time.sleep(PRE_QUERY_DURATION)
         subprocess.run(["clear"])
+        print(f"{Fore.MAGENTA}Game Code: {gameCode}\n{Style.RESET_ALL}")
 
         #QUESTION period
         print(f"{Fore.CYAN}Question {i} out of {len(createQuiz.questions)}\n{html.unescape(question['question'])}")
@@ -297,6 +299,8 @@ def play():
 
         time.sleep(QUESTION_DURATION)
         subprocess.run(["clear"])
+        print(f"{Fore.MAGENTA}Game Code: {gameCode}\n{Style.RESET_ALL}")
+
 
         print(f"{Fore.CYAN}Time's up...{Style.RESET_ALL}")
         
@@ -306,9 +310,8 @@ def play():
         top3scoreboard = updateAndPrintScoreboard()
         sendBroadcast(myIp,postQueryType,3,questionNum=i, payload=top3scoreboard)
         time.sleep(POST_QUERY_DURATION)
-        subprocess.run(["clear"])
-        #TODO here we should also send POST_QUERY packets
-        #     will the whole scoreboard be broadcasted or will each player receive only his/her score?
+
+
 
 def startGame():
     global startSignal
