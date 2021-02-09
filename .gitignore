@@ -130,3 +130,6 @@ dmypy.json
 
 # VSCode folder
 .vscode/
+
+# Quizzes folder
+quizzes/
