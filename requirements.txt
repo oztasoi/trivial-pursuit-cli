@@ -1,3 +1,4 @@
 bidict==0.21.2
 colorama==0.4.3
-urllib3==1.25.8
+inputimeout==1.0.4
+ntplib==0.3.4
