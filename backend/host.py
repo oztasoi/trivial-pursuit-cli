@@ -36,11 +36,21 @@ def updateScoreboard():
     #TODO how should we distribute points? 1st 3, 2nd 2, 2rd 1? TBD
     global scoreboard
     res = dict(sorted(currentQuestion[currAnswers].items(), key=lambda item: item[1])) #sort according to timestamp
-    count = 0
+
+    resKeys = list(res.keys())
+    if len(resKeys) == 0:
+        return
+    firstIp = resKeys[0]
+    lastIp = resKeys[-1]
+    if firstIp == lastIp:
+        scoreboard[firstIp] = scoreboard.get(firstIp, 0) + 1000
+        return
+    firstTimestamp = float(res[firstIp])
+    lastTimestamp = float(res[lastIp])
+    difference = float(lastTimestamp) - float(firstTimestamp)
     for ip in res.keys():
-        if count < 3 and ip in players:
-            scoreboard[ip] =  scoreboard.get(ip, 0) + 3-count
-            count += 1
+        if ip in players:
+            scoreboard[ip] =  scoreboard.get(ip, 0) + (float(res[ip] - firstTimestamp) / difference) * 1000
         else:
             return
 

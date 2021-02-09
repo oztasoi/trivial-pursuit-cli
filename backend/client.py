@@ -99,7 +99,6 @@ def consumeUdp(message): #TODO this should be modified according to PRE_QUERY an
 
 def displayScoreboard(currentScoreboard):
     print(f"{Fore.YELLOW}Scoreboard")
-    print(currentScoreboard)
     for rank, userInfo in currentScoreboard.items():
         name = userInfo["name"]
         score = userInfo["score"]
@@ -134,7 +133,6 @@ def sender():
     global exitSignal, gameCode
 
     while not respondReceived:
-        print("respondReceived",respondReceived)
         gameCode = input(f"{Fore.CYAN}Enter the game code seen on the host screen\n{Style.RESET_ALL}")
         sendBroadcast(myIp,discoverType,3,f"{myName}; {gameCode}")
         time.sleep(2)
