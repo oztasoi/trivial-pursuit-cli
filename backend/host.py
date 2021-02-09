@@ -40,7 +40,7 @@ def updateScoreboard():
     for ip in res.keys():
         if count < 3 and ip in players:
             scoreboard[ip] =  scoreboard.get(ip, 0) + 3-count
-            count+=1
+            count += 1
         else:
             return
 
@@ -56,11 +56,12 @@ def printScoreboard(scoreboard):
     print(f"{Fore.YELLOW}Scoreboard")
     top3scoreboard = {}
     for i,item in enumerate(scoreboard.items(),1):
-        username = players[item[0]]
-        score = item[1]
-        print(f"{Fore.YELLOW}{i}\t{Fore.GREEN}{username}\t{score}{Style.RESET_ALL}")
-        if i <= 3:
-            top3scoreboard[i] = {"name": username, "score": score}
+        if item[0] in players.keys():
+            username = players[item[0]]
+            score = item[1]
+            print(f"{Fore.YELLOW}{i}\t{Fore.GREEN}{username}\t{score}{Style.RESET_ALL}")
+            if i <= 3:
+                top3scoreboard[i] = {"name": username, "score": score}
     return top3scoreboard
 
 def waitForPlayers():

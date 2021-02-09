@@ -99,8 +99,11 @@ def consumeUdp(message): #TODO this should be modified according to PRE_QUERY an
 
 def displayScoreboard(currentScoreboard):
     print(f"{Fore.YELLOW}Scoreboard")
-    for i,item in enumerate(currentScoreboard.items(),1):
-        print(f"{Fore.YELLOW}{i}\t{Fore.GREEN}{item[0]}\t{item[1]}{Style.RESET_ALL}")
+    print(currentScoreboard)
+    for rank, userInfo in currentScoreboard.items():
+        name = userInfo["name"]
+        score = userInfo["score"]
+        print(f"{Fore.YELLOW}{rank}\t{Fore.GREEN}{name}\t{score}{Style.RESET_ALL}")
 
 def initializeClient():
     global myName
