@@ -40,6 +40,7 @@ def updateScoreboard():
     for ip in res.keys():
         if count < 3 and ip in players:
             scoreboard[ip] =  scoreboard.get(ip, 0) + 3-count
+            count+=1
         else:
             return
 
@@ -283,7 +284,6 @@ def play():
         #PRE_QUERY period
         time.sleep(PRE_QUERY_DURATION)
         subprocess.run(["clear"])
-        print(time.time() + OFFSET)
 
         #QUESTION period
         print(f"{Fore.CYAN}Question {i} out of {len(createQuiz.questions)}\n{html.unescape(question['question'])}")
@@ -296,18 +296,16 @@ def play():
 
         time.sleep(QUESTION_DURATION)
         subprocess.run(["clear"])
-        print(time.time() + OFFSET)
 
         print(f"{Fore.CYAN}Time's up...{Style.RESET_ALL}")
         
         #broadcast POST_QUERY packet
-        subprocess.run(["clear"])
         print(f"{Fore.CYAN}Correct answer was {html.unescape(question['correct_answer'])}{Style.RESET_ALL}")
-        print(time.time() + OFFSET)
         
         top3scoreboard = updateAndPrintScoreboard()
         sendBroadcast(myIp,postQueryType,3,questionNum=i, payload=top3scoreboard)
         time.sleep(POST_QUERY_DURATION)
+        subprocess.run(["clear"])
         #TODO here we should also send POST_QUERY packets
         #     will the whole scoreboard be broadcasted or will each player receive only his/her score?
 
