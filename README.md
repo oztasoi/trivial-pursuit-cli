@@ -61,38 +61,38 @@ Below, you can find how to run our CLI app.
     `
 
 ## FAQ:
-- \+ How many quiz modes does the Scio have?
-- -> 3 quiz modes: single, multiple, custom
+- How many quiz modes does the Scio have?
+    - 3 quiz modes: single, multiple, custom
 
-- \+ How does custom quiz mode works?
-- -> Add your customized quiz as a JSON file into `quizzes` directory, then you are able to see them in your host session as options in quiz mode 3, custom.
-- Example quiz.json:
-    - `[
-   {
-      "category":"Art",
-      "type":"multiple",
-      "difficulty":"medium",
-      "question":"Which time signature is commonly known as &ldquo;Cut Time?&rdquo;",
-      "correct_answer":"2\/2",
-      "incorrect_answers":[
-         "4\/4",
-         "6\/8",
-         "3\/4"
-      ]
-   },
-   {
-      "category":"Art",
-      "type":"multiple",
-      "difficulty":"easy",
-      "question":"Who painted the Sistine Chapel?",
-      "correct_answer":"Michelangelo",
-      "incorrect_answers":[
-         "Leonardo da Vinci",
-         "Pablo Picasso",
-         "Raphael"
-      ]
-   }
-]`
+- How does custom quiz mode works?
+    - Add your customized quiz as a JSON file into `quizzes` directory, then you are able to see them in your host session as options in quiz mode 3, custom.
+    - Example quiz.json:
+        - `[
+            {
+                "category":"Art",
+                "type":"multiple",
+                "difficulty":"medium",
+                "question":"Which time signature is commonly known as &ldquo;Cut Time?&rdquo;",
+                "correct_answer":"2\/2",
+                "incorrect_answers":[
+                    "4\/4",
+                    "6\/8",
+                    "3\/4"
+                ]
+            },
+            {
+                "category":"Art",
+                "type":"multiple",
+                "difficulty":"easy",
+                "question":"Who painted the Sistine Chapel?",
+                "correct_answer":"Michelangelo",
+                "incorrect_answers":[
+                    "Leonardo da Vinci",
+                    "Pablo Picasso",
+                    "Raphael"
+                ]
+            }
+            ]`
 
-- \+ Does Scio support Hamachi Networks?
-- -> Yes, you can create your Hamachi network and add your friends, then you can select your IP as your Hamachi IP while playing.
+- Does Scio support Hamachi Networks?
+    - Yes, you can create your Hamachi network and add your friends, then you can select your IP as your Hamachi IP while playing.
